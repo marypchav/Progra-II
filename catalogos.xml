@@ -42,7 +42,7 @@
       comisionHumano="1000" comisionAutomatico="1000" interes="20"/>
   </Tipo_Cuenta_Ahorros>
 
-  <TipoOperaciones>
+  <TipoOperacionesBitacora>
     <TipoOperacion id="1" nombre="Login"/>
     <TipoOperacion id="2" nombre="Logout"/>
     <TipoOperacion id="3" nombre="Agregar beneficiario"/>
@@ -50,6 +50,6 @@
     <TipoOperacion id="5" nombre="Eliminar beneficiario"/>
     <TipoOperacion id="6" nombre="Actualizar porcentaje de beneficiario"/>
     <TipoOperacion id="7" nombre="Consultar estado de cuenta"/>
-  </TipoOperaciones>
+  </TipoOperacionesBitacora>
 
 </Catalogos>

@@ -4,6 +4,7 @@
   <Personas>
     <Persona TipoDocuIdentidad="1" Nombre="Javith Aguero Hernandez" ValorDocumentoIdentidad="117370445" FechaNacimiento="1999-03-20" Email="aguerojavith@gmail.com" telefono1="85343403" telefono2="24197636"/>
     <Persona TipoDocuIdentidad="1" Nombre="Osvaldo Aguero Hernandez" ValorDocumentoIdentidad="12738545" FechaNacimiento="1994-10-13" Email="osadage@gmail.com" telefono1="87541766" telefono2="24197545"/>
+    <Persona TipoDocuIdentidad="1" Nombre="Franco Quiros Ramirez" ValorDocumentoIdentidad="130004000" FechaNacimiento="1994-10-13" Email="fquiros@itcr.ac.cr" telefono1="87541766" telefono2="24197545"/>
     <Persona TipoDocuIdentidad="1" Nombre="Maria Fernanda Solano Mora" ValorDocumentoIdentidad="304560789" FechaNacimiento="1988-05-02" Email="mfsolano@gmail.com" telefono1="88112233" telefono2="25501122"/>
     <Persona TipoDocuIdentidad="1" Nombre="Carlos Andres Vargas Rojas" ValorDocumentoIdentidad="205430876" FechaNacimiento="1985-11-25" Email="cvargas@gmail.com" telefono1="87001234" telefono2="22334455"/>
     <Persona TipoDocuIdentidad="1" Nombre="Lucia Jimenez Castro" ValorDocumentoIdentidad="118820334" FechaNacimiento="2001-07-14" Email="lucia.jc@gmail.com" telefono1="86452310" telefono2="24451122"/>
@@ -28,67 +29,68 @@
   </Cuentas>
 
   <Beneficiarios>
-    <Beneficiario NumeroCuenta="11000001" ValorDocumentoIdentidadBeneficiario="12738545"  ParentezcoId="5" Porcentaje="40"/>
-    <Beneficiario NumeroCuenta="11000001" ValorDocumentoIdentidadBeneficiario="401560321" ParentezcoId="2" Porcentaje="35"/>
-    <Beneficiario NumeroCuenta="11000001" ValorDocumentoIdentidadBeneficiario="115670213" ParentezcoId="7" Porcentaje="25"/>
+    <Beneficiario NumeroCuenta="11000001" ValorDocumentoIdentidadBeneficiario="12738545"  IdParentezco="5" Porcentaje="40"/>
+    <Beneficiario NumeroCuenta="11000001" ValorDocumentoIdentidadBeneficiario="401560321" IdParentezco="2" Porcentaje="35"/>
+    <Beneficiario NumeroCuenta="11000001" ValorDocumentoIdentidadBeneficiario="115670213" IdParentezco="7" Porcentaje="25"/>
 
-    <Beneficiario NumeroCuenta="11000002" ValorDocumentoIdentidadBeneficiario="117370445" ParentezcoId="5" Porcentaje="50"/>
-    <Beneficiario NumeroCuenta="11000002" ValorDocumentoIdentidadBeneficiario="401560321" ParentezcoId="2" Porcentaje="30"/>
-    <Beneficiario NumeroCuenta="11000002" ValorDocumentoIdentidadBeneficiario="118820334" ParentezcoId="8" Porcentaje="20"/>
+    <Beneficiario NumeroCuenta="11000002" ValorDocumentoIdentidadBeneficiario="117370445" IdParentezco="5" Porcentaje="50"/>
+    <Beneficiario NumeroCuenta="11000002" ValorDocumentoIdentidadBeneficiario="401560321" IdParentezco="2" Porcentaje="30"/>
+    <Beneficiario NumeroCuenta="11000002" ValorDocumentoIdentidadBeneficiario="118820334" IdParentezco="8" Porcentaje="20"/>
 
-    <Beneficiario NumeroCuenta="11000003" ValorDocumentoIdentidadBeneficiario="105430987" ParentezcoId="2" Porcentaje="50"/>
-    <Beneficiario NumeroCuenta="11000003" ValorDocumentoIdentidadBeneficiario="205430876" ParentezcoId="5" Porcentaje="30"/>
-    <Beneficiario NumeroCuenta="11000003" ValorDocumentoIdentidadBeneficiario="203450678" ParentezcoId="8" Porcentaje="20"/>
+    <Beneficiario NumeroCuenta="11000003" ValorDocumentoIdentidadBeneficiario="105430987" IdParentezco="2" Porcentaje="50"/>
+    <Beneficiario NumeroCuenta="11000003" ValorDocumentoIdentidadBeneficiario="205430876" IdParentezco="5" Porcentaje="30"/>
+    <Beneficiario NumeroCuenta="11000003" ValorDocumentoIdentidadBeneficiario="203450678" IdParentezco="8" Porcentaje="20"/>
 
-    <Beneficiario NumeroCuenta="11000004" ValorDocumentoIdentidadBeneficiario="304560789" ParentezcoId="6" Porcentaje="40"/>
-    <Beneficiario NumeroCuenta="11000004" ValorDocumentoIdentidadBeneficiario="105430987" ParentezcoId="2" Porcentaje="30"/>
-    <Beneficiario NumeroCuenta="11000004" ValorDocumentoIdentidadBeneficiario="701230456" ParentezcoId="7" Porcentaje="30"/>
+    <Beneficiario NumeroCuenta="11000004" ValorDocumentoIdentidadBeneficiario="304560789" IdParentezco="6" Porcentaje="40"/>
+    <Beneficiario NumeroCuenta="11000004" ValorDocumentoIdentidadBeneficiario="105430987" IdParentezco="2" Porcentaje="30"/>
+    <Beneficiario NumeroCuenta="11000004" ValorDocumentoIdentidadBeneficiario="701230456" IdParentezco="7" Porcentaje="30"/>
 
-    <Beneficiario NumeroCuenta="11000005" ValorDocumentoIdentidadBeneficiario="115670213" ParentezcoId="5" Porcentaje="50"/>
-    <Beneficiario NumeroCuenta="11000005" ValorDocumentoIdentidadBeneficiario="112340987" ParentezcoId="8" Porcentaje="30"/>
-    <Beneficiario NumeroCuenta="11000005" ValorDocumentoIdentidadBeneficiario="401560321" ParentezcoId="2" Porcentaje="20"/>
+    <Beneficiario NumeroCuenta="11000005" ValorDocumentoIdentidadBeneficiario="115670213" IdParentezco="5" Porcentaje="50"/>
+    <Beneficiario NumeroCuenta="11000005" ValorDocumentoIdentidadBeneficiario="112340987" IdParentezco="8" Porcentaje="30"/>
+    <Beneficiario NumeroCuenta="11000005" ValorDocumentoIdentidadBeneficiario="401560321" IdParentezco="2" Porcentaje="20"/>
 
     <!-- Esta cuenta suma 90: sirve para probar la alerta -->
-    <Beneficiario NumeroCuenta="11000006" ValorDocumentoIdentidadBeneficiario="309870654" ParentezcoId="5" Porcentaje="40"/>
-    <Beneficiario NumeroCuenta="11000006" ValorDocumentoIdentidadBeneficiario="203450678" ParentezcoId="8" Porcentaje="30"/>
-    <Beneficiario NumeroCuenta="11000006" ValorDocumentoIdentidadBeneficiario="112340987" ParentezcoId="8" Porcentaje="20"/>
+    <Beneficiario NumeroCuenta="11000006" ValorDocumentoIdentidadBeneficiario="309870654" IdParentezco="5" Porcentaje="40"/>
+    <Beneficiario NumeroCuenta="11000006" ValorDocumentoIdentidadBeneficiario="203450678" IdParentezco="8" Porcentaje="30"/>
+    <Beneficiario NumeroCuenta="11000006" ValorDocumentoIdentidadBeneficiario="112340987" IdParentezco="8" Porcentaje="20"/>
 
-    <Beneficiario NumeroCuenta="11000007" ValorDocumentoIdentidadBeneficiario="118820334" ParentezcoId="8" Porcentaje="60"/>
-    <Beneficiario NumeroCuenta="11000007" ValorDocumentoIdentidadBeneficiario="115670213" ParentezcoId="7" Porcentaje="40"/>
+    <Beneficiario NumeroCuenta="11000007" ValorDocumentoIdentidadBeneficiario="118820334" IdParentezco="8" Porcentaje="60"/>
+    <Beneficiario NumeroCuenta="11000007" ValorDocumentoIdentidadBeneficiario="115670213" IdParentezco="7" Porcentaje="40"/>
 
-    <Beneficiario NumeroCuenta="11000008" ValorDocumentoIdentidadBeneficiario="701230456" ParentezcoId="5" Porcentaje="50"/>
-    <Beneficiario NumeroCuenta="11000008" ValorDocumentoIdentidadBeneficiario="203450678" ParentezcoId="8" Porcentaje="25"/>
-    <Beneficiario NumeroCuenta="11000008" ValorDocumentoIdentidadBeneficiario="105430987" ParentezcoId="2" Porcentaje="25"/>
+    <Beneficiario NumeroCuenta="11000008" ValorDocumentoIdentidadBeneficiario="701230456" IdParentezco="5" Porcentaje="50"/>
+    <Beneficiario NumeroCuenta="11000008" ValorDocumentoIdentidadBeneficiario="203450678" IdParentezco="8" Porcentaje="25"/>
+    <Beneficiario NumeroCuenta="11000008" ValorDocumentoIdentidadBeneficiario="105430987" IdParentezco="2" Porcentaje="25"/>
   </Beneficiarios>
 
   <Estados_de_Cuenta>
     <!-- 10 estados en la cuenta 11000001 para probar "ultimos 8" -->
-    <Estado_de_Cuenta NumeroCuenta="11000001" fechaInicio="2020-10-13" fechafin="2020-11-12" saldoinicial="1000000.00" saldo_final="1250000.00"/>
-    <Estado_de_Cuenta NumeroCuenta="11000001" fechaInicio="2020-11-13" fechafin="2020-12-12" saldoinicial="1250000.00" saldo_final="1300000.00"/>
-    <Estado_de_Cuenta NumeroCuenta="11000001" fechaInicio="2020-12-13" fechafin="2021-01-12" saldoinicial="1300000.00" saldo_final="1280000.00"/>
-    <Estado_de_Cuenta NumeroCuenta="11000001" fechaInicio="2021-01-13" fechafin="2021-02-12" saldoinicial="1280000.00" saldo_final="1350000.00"/>
-    <Estado_de_Cuenta NumeroCuenta="11000001" fechaInicio="2021-02-13" fechafin="2021-03-12" saldoinicial="1350000.00" saldo_final="1400000.00"/>
-    <Estado_de_Cuenta NumeroCuenta="11000001" fechaInicio="2021-03-13" fechafin="2021-04-12" saldoinicial="1400000.00" saldo_final="1380000.00"/>
-    <Estado_de_Cuenta NumeroCuenta="11000001" fechaInicio="2021-04-13" fechafin="2021-05-12" saldoinicial="1380000.00" saldo_final="1450000.00"/>
-    <Estado_de_Cuenta NumeroCuenta="11000001" fechaInicio="2021-05-13" fechafin="2021-06-12" saldoinicial="1450000.00" saldo_final="1500000.00"/>
-    <Estado_de_Cuenta NumeroCuenta="11000001" fechaInicio="2021-06-13" fechafin="2021-07-12" saldoinicial="1500000.00" saldo_final="1520000.00"/>
-    <Estado_de_Cuenta NumeroCuenta="11000001" fechaInicio="2021-07-13" fechafin="2021-08-12" saldoinicial="1520000.00" saldo_final="1600000.00"/>
+    <Estado_de_Cuenta NumeroCuenta="11000001" fechaInicio="2020-10-13" fechafin="2020-11-12" saldoinicial="1000000.00" saldoMinimo="950000.00"  saldo_final="1250000.00"/>
+    <Estado_de_Cuenta NumeroCuenta="11000001" fechaInicio="2020-11-13" fechafin="2020-12-12" saldoinicial="1250000.00" saldoMinimo="1200000.00" saldo_final="1300000.00"/>
+    <Estado_de_Cuenta NumeroCuenta="11000001" fechaInicio="2020-12-13" fechafin="2021-01-12" saldoinicial="1300000.00" saldoMinimo="1250000.00" saldo_final="1280000.00"/>
+    <Estado_de_Cuenta NumeroCuenta="11000001" fechaInicio="2021-01-13" fechafin="2021-02-12" saldoinicial="1280000.00" saldoMinimo="1280000.00" saldo_final="1350000.00"/>
+    <Estado_de_Cuenta NumeroCuenta="11000001" fechaInicio="2021-02-13" fechafin="2021-03-12" saldoinicial="1350000.00" saldoMinimo="1300000.00" saldo_final="1400000.00"/>
+    <Estado_de_Cuenta NumeroCuenta="11000001" fechaInicio="2021-03-13" fechafin="2021-04-12" saldoinicial="1400000.00" saldoMinimo="1350000.00" saldo_final="1380000.00"/>
+    <Estado_de_Cuenta NumeroCuenta="11000001" fechaInicio="2021-04-13" fechafin="2021-05-12" saldoinicial="1380000.00" saldoMinimo="1380000.00" saldo_final="1450000.00"/>
+    <Estado_de_Cuenta NumeroCuenta="11000001" fechaInicio="2021-05-13" fechafin="2021-06-12" saldoinicial="1450000.00" saldoMinimo="1420000.00" saldo_final="1500000.00"/>
+    <Estado_de_Cuenta NumeroCuenta="11000001" fechaInicio="2021-06-13" fechafin="2021-07-12" saldoinicial="1500000.00" saldoMinimo="1480000.00" saldo_final="1520000.00"/>
+    <Estado_de_Cuenta NumeroCuenta="11000001" fechaInicio="2021-07-13" fechafin="2021-08-12" saldoinicial="1520000.00" saldoMinimo="1500000.00" saldo_final="1600000.00"/>
 
-    <Estado_de_Cuenta NumeroCuenta="11000002" fechaInicio="2021-01-05" fechafin="2021-02-04" saldoinicial="500000.00" saldo_final="520000.00"/>
-    <Estado_de_Cuenta NumeroCuenta="11000002" fechaInicio="2021-02-05" fechafin="2021-03-04" saldoinicial="520000.00" saldo_final="560000.00"/>
+    <Estado_de_Cuenta NumeroCuenta="11000002" fechaInicio="2021-01-05" fechafin="2021-02-04" saldoinicial="500000.00" saldoMinimo="480000.00" saldo_final="520000.00"/>
+    <Estado_de_Cuenta NumeroCuenta="11000002" fechaInicio="2021-02-05" fechafin="2021-03-04" saldoinicial="520000.00" saldoMinimo="510000.00" saldo_final="560000.00"/>
 
-    <Estado_de_Cuenta NumeroCuenta="11000003" fechaInicio="2021-03-15" fechafin="2021-04-14" saldoinicial="250000.00" saldo_final="300000.00"/>
+    <Estado_de_Cuenta NumeroCuenta="11000003" fechaInicio="2021-03-15" fechafin="2021-04-14" saldoinicial="250000.00" saldoMinimo="240000.00" saldo_final="300000.00"/>
   </Estados_de_Cuenta>
 
   <Usuarios>
-    <Usuario User="jaguero"  Pass="LaFacil"    EsAdministrador="0"/>
-    <Usuario User="oaguero"  Pass="Osva1234*"  EsAdministrador="0"/>
-    <Usuario User="msolano"  Pass="Maria2026*" EsAdministrador="0"/>
-    <Usuario User="fquiros"  Pass="MyPass123*" EsAdministrador="1"/>
+    <Usuario User="jaguero" Pass="LaFacil"    EsAdministrador="0" ValorDocId="117370445"/>
+    <Usuario User="oaguero" Pass="Osva1234*"  EsAdministrador="0" ValorDocId="12738545"/>
+    <Usuario User="msolano" Pass="Maria2026*" EsAdministrador="0" ValorDocId="304560789"/>
+    <Usuario User="fquiros" Pass="MyPass123*" EsAdministrador="1" ValorDocId="130004000"/>
   </Usuarios>
 
   <Usuarios_Ver>
     <UsuarioPuedeVer User="jaguero" NumeroCuenta="11000001"/>
+    <UsuarioPuedeVer User="oaguero" NumeroCuenta="11000001"/>
     <UsuarioPuedeVer User="oaguero" NumeroCuenta="11000002"/>
     <UsuarioPuedeVer User="msolano" NumeroCuenta="11000003"/>
   </Usuarios_Ver>

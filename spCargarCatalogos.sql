@@ -1,4 +1,4 @@
-CREATE OR ALTER PROCEDURE dbo.CargarCatalogos
+CREATE OR ALTER PROCEDURE dbo.spCargarCatalogos
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -12,16 +12,16 @@ BEGIN
 
         INSERT INTO dbo.TipoDocuIdentidad (IdTipoDocuIdentidad, Nombre)
         SELECT Node.value('@Id', 'INT'), Node.value('@Nombre', 'VARCHAR(64)')
-        FROM @datos.nodes('//Tipo_Doc/TipoDocuIdentidad') AS T(Node);
+        FROM @datos.nodes('/Catalogos/Tipo_Doc/TipoDocuIdentidad') AS T(Node);
 
         INSERT INTO dbo.TipoMoneda (IdTipoMoneda, Nombre, Simbolo)
         SELECT Node.value('@Id', 'INT'), Node.value('@Nombre', 'VARCHAR(64)'),
                Node.value('@Simbolo', 'NVARCHAR(5)')
-        FROM @datos.nodes('//Tipo_Moneda/TipoMoneda') AS T(Node);
+        FROM @datos.nodes('/Catalogos/Tipo_Moneda/TipoMoneda') AS T(Node);
 
         INSERT INTO dbo.Parentesco (IdParentesco, Nombre)
-        SELECT Node.value('@Id', 'INT'), Node.value('@Nombre', 'VARCHAR(20)')
-        FROM @datos.nodes('//Parentezcos/Parentezco') AS T(Node);
+        SELECT Node.value('@Id', 'INT'), Node.value('@Nombre', 'VARCHAR(32)')
+        FROM @datos.nodes('/Catalogos/Parentezcos/Parentezco') AS T(Node);
 
         INSERT INTO dbo.TipoCuentaAhorro (
             IdTipoCuentaAhorro, Nombre, IdTipoMoneda, SaldoMinimo, MultaSaldoMin,
@@ -38,11 +38,11 @@ BEGIN
              , Node.value('@comisionHumano', 'MONEY')
              , Node.value('@comisionAutomatico', 'MONEY')
              , Node.value('@interes', 'DECIMAL(5,2)')
-        FROM @datos.nodes('//Tipo_Cuenta_Ahorros/TipoCuentaAhorro') AS T(Node);
+        FROM @datos.nodes('/Catalogos/Tipo_Cuenta_Ahorros/TipoCuentaAhorro') AS T(Node);
 
         INSERT INTO dbo.TipoOperacion (IdTipoOperacion, Nombre)
         SELECT Node.value('@id', 'INT'), Node.value('@nombre', 'VARCHAR(64)')
-        FROM @datos.nodes('//TipoOperaciones/TipoOperacion') AS T(Node);
+        FROM @datos.nodes('/Catalogos/TipoOperacionesBitacora/TipoOperacion') AS T(Node);
 
         COMMIT TRANSACTION;
     END TRY
@@ -54,10 +54,3 @@ END;
 GO
 
 EXEC dbo.CargarCatalogos;
-
--- Prueba
-SELECT * FROM dbo.TipoDocuIdentidad;
-SELECT * FROM dbo.TipoMoneda;
-SELECT * FROM dbo.Parentesco;
-SELECT * FROM dbo.TipoCuentaAhorro;
-SELECT * FROM dbo.TipoOperacion;
