@@ -1,0 +1,25 @@
+{
+  "name": "progra-ii",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marypchav/Progra-II.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/marypchav/Progra-II/issues"
+  },
+  "homepage": "https://github.com/marypchav/Progra-II#readme",
+  "dependencies": {
+    "dotenv": "^18.0.5",
+    "mssql": "^12.7.2"
+  }
+}
