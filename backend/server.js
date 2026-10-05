@@ -1,9 +1,8 @@
-// backend/server.js
-// Único archivo que habla con SQL Server. Todo se hace llamando procedimientos almacenados.
+// backend/server.js, unico archivo que habla con SQL Server. Todo se hace llamando procedimientos almacenados.
 require('dotenv').config();
 const sql = require('mssql');
 
-// ---------------- Configuración de la conexión ----------------
+// configuración de la conexión con el .env
 const config = {
     server: process.env.DB_SERVER,
     database: process.env.DB_NAME,
@@ -11,13 +10,13 @@ const config = {
     password: process.env.DB_PASSWORD,
     port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : undefined,
     options: {
-        encrypt: false,               // conexión local
-        trustServerCertificate: true  // evita errores de certificado en desarrollo
+        encrypt: false,
+        trustServerCertificate: true // evita errores de certificado en desarrollo
     },
     pool: { max: 10, min: 0, idleTimeoutMillis: 30000 }
 };
 
-// Nombres de los SP en un solo lugar (si el profesor cambia el formato, solo se edita aquí)
+// nombres de los SP en un solo lugar
 const SP = {
     LOGIN: 'spLogin',
     LOGOUT: 'spLogout',
@@ -31,7 +30,7 @@ const SP = {
     ESTADOS_CUENTA: 'spConsultarEstadosCuenta'
 };
 
-// Mensajes para los códigos de error que devuelven los SP
+// mensajes para los códigos de error que devuelven los SP
 const MENSAJES_ERROR = {
     0: 'Operación exitosa',
     50000: 'Error inesperado en la base de datos',
@@ -51,7 +50,7 @@ const MENSAJES_ERROR = {
     50014: 'La cuenta no existe'
 };
 
-// ---------------- Conexión (un solo pool para todo el programa) ----------------
+// conexión con solo un pool para todo el programa, menos código
 let pool = null;
 
 async function obtenerPool() {
@@ -68,9 +67,7 @@ async function cerrarConexion() {
     }
 }
 
-// ---------------- Función genérica para ejecutar un SP ----------------
-// entradas: [{ nombre, tipo, valor }]
-// conCodigo: true si el SP tiene el parámetro de salida @OutResultCode
+// función genérica para ejecutar un SP, entradas: [{ nombre, tipo, valor }]
 async function ejecutarSP(nombreSP, entradas = [], conCodigo = true) {
     const p = await obtenerPool();
     const request = p.request();
@@ -89,12 +86,12 @@ async function ejecutarSP(nombreSP, entradas = [], conCodigo = true) {
         codigo,
         mensaje: MENSAJES_ERROR[codigo] || 'Código desconocido',
         exito: codigo === 0,
-        datos: result.recordset || [],      // primer resultado
-        recordsets: result.recordsets || [] // todos los resultados (para los catálogos)
+        datos: result.recordset || [], // primer resultado
+        recordsets: result.recordsets || [] // todos los resultados
     };
 }
 
-// ---------------- Funciones, una por SP ----------------
+// funciones por SP
 
 async function login(userName, pass, ip) {
     const r = await ejecutarSP(SP.LOGIN, [
@@ -102,7 +99,7 @@ async function login(userName, pass, ip) {
         { nombre: 'Pass', tipo: sql.VarChar(64), valor: pass },
         { nombre: 'IP', tipo: sql.VarChar(64), valor: ip }
     ]);
-    // Si el login es correcto, el SP devuelve una fila con los datos del usuario
+    // si el login sirve, el SP devuelve una fila con los datos del usuario
     r.usuario = r.exito ? r.datos[0] : null;
     return r;
 }
@@ -114,14 +111,14 @@ async function logout(idUsuario, ip) {
     ]);
 }
 
-// Este SP no tiene @OutResultCode
+// este SP no tiene @OutResultCode
 async function obtenerCuentasUsuario(idUsuario) {
     return ejecutarSP(SP.CUENTAS_USUARIO, [
         { nombre: 'IdUsuario', tipo: sql.Int, valor: idUsuario }
     ], false);
 }
 
-// Este SP tampoco tiene @OutResultCode. Devuelve 2 resultados: parentescos y tipos de documento
+// este SP devuelve 2 resultados: parentescos y tipos de documento
 async function obtenerCatalogosBeneficiario() {
     const r = await ejecutarSP(SP.CATALOGOS_BENEFICIARIO, [], false);
     r.parentescos = r.recordsets[0] || [];
@@ -148,8 +145,7 @@ async function alertaPorcentajes(idUsuario, idCuenta) {
     return r;
 }
 
-// d = { idTipoDocuIdentidad, valorDocumento, nombre, fechaNacimiento ('YYYY-MM-DD'),
-//       email, telefono1, telefono2, idParentesco, porcentaje }
+// d = { idTipoDocuIdentidad, valorDocumento, nombre, fechaNacimiento ('YYYY-MM-DD'), email, telefono1, telefono2, idParentesco, porcentaje }
 async function agregarBeneficiario(idUsuario, idCuenta, ip, d) {
     return ejecutarSP(SP.AGREGAR_BENEFICIARIO, [
         { nombre: 'IdUsuario', tipo: sql.Int, valor: idUsuario },
@@ -168,7 +164,7 @@ async function agregarBeneficiario(idUsuario, idCuenta, ip, d) {
 }
 
 // d = { nombre, fechaNacimiento, email, telefono1, telefono2, idParentesco, porcentaje }
-// El tipo y valor del documento no se editan (son la llave alterna de la persona)
+// el tipo y valor del documento no se editan
 async function actualizarBeneficiario(idUsuario, idBeneficiario, ip, d) {
     return ejecutarSP(SP.ACTUALIZAR_BENEFICIARIO, [
         { nombre: 'IdUsuario', tipo: sql.Int, valor: idUsuario },
@@ -200,8 +196,6 @@ async function consultarEstadosCuenta(idUsuario, idCuenta, ip) {
     ]);
 }
 
-// 'YYYY-MM-DD' -> Date (a medianoche UTC, para que SQL Server guarde el mismo día)
-// Si la fecha viene vacía o mal escrita devuelve null y el SP responde 50009.
 function convertirFecha(texto) {
     if (!texto) return null;
     const f = new Date(texto);

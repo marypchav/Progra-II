@@ -1,19 +1,16 @@
-// frontend/script.js
-// Funciones que usará el frontend. Guardan la sesión y llaman a backend/server.js.
-// Por ahora no hay sitio web: la prueba del final muestra todo en consola.
+// Funciones que usará el frontend, estas guardan la sesión y llaman a backend/server.js.
 const servidor = require('../backend/server.js');
 
-// IP del cliente. Cuando exista el sitio, el servidor debe leerla de la petición (req.ip)
-// y pasarla aquí. Mientras tanto se usa un valor fijo.
+// ip del cliente. mientras se tiene el sitio web se usa un valor fijo.
 const IP_CLIENTE = '127.0.0.1';
 
 const TEXTO_ALERTA =
     'la suma de los porcentajes de sus beneficiarios no suma 100, favor corregir y cancelar la edición';
 
-// ---------------- Estado de la sesión ----------------
+// estado de la sesión
 const sesion = {
-    usuario: null,           // { IdUsuario, UserName, EsAdministrador, IdPersona }
-    cuentas: [],             // cuentas que el usuario puede ver
+    usuario: null, // { IdUsuario, UserName, EsAdministrador, IdPersona }
+    cuentas: [], // cuentas que el usuario puede ver
     cuentaSeleccionada: null // fila de la cuenta elegida
 };
 
@@ -33,7 +30,7 @@ function exigirCuenta() {
     return null;
 }
 
-// ---------------- Login y logout ----------------
+// Login y logout
 async function iniciarSesion(userName, pass) {
     if (!userName || !pass) {
         return { exito: false, mensaje: 'Debe ingresar usuario y password' };
@@ -59,7 +56,7 @@ async function cerrarSesion() {
     return { exito: r.exito, mensaje: r.exito ? 'Sesión cerrada' : r.mensaje };
 }
 
-// ---------------- Selección de cuenta ----------------
+// selección de cuenta
 async function cargarCuentas() {
     const e = exigirSesion();
     if (e) return e;
@@ -68,7 +65,7 @@ async function cargarCuentas() {
     return { exito: true, mensaje: 'Cuentas cargadas', cuentas: r.datos };
 }
 
-// Se elige por IdCuenta, entre las cuentas que el usuario puede ver
+// se elige por IdCuenta, entre las cuentas que el usuario puede ver
 function seleccionarCuenta(idCuenta) {
     const e = exigirSesion();
     if (e) return e;
@@ -80,7 +77,7 @@ function seleccionarCuenta(idCuenta) {
     return { exito: true, mensaje: 'Cuenta seleccionada', cuenta };
 }
 
-// ---------------- Beneficiarios ----------------
+// beneficiarios
 async function cargarCatalogosBeneficiario() {
     const e = exigirSesion();
     if (e) return e;
@@ -95,7 +92,7 @@ async function cargarBeneficiarios() {
     return { exito: r.exito, mensaje: r.mensaje, beneficiarios: r.datos };
 }
 
-// Devuelve { mostrarAlerta, mensaje } para que el frontend pinte la alerta llamativa
+// devuelve { mostrarAlerta, mensaje } para que el frontend la enseñe
 async function revisarAlertaPorcentajes() {
     const e = exigirCuenta();
     if (e) return e;
@@ -109,7 +106,7 @@ async function revisarAlertaPorcentajes() {
     };
 }
 
-// Validación previa en la capa lógica (el SP vuelve a validar)
+// validación previa en la capa lógica
 function validarBeneficiario(d, esNuevo) {
     if (!d.nombre || d.nombre.trim() === '' || d.nombre.length > 64) return 'Nombre inválido (máximo 64 caracteres)';
     if (esNuevo && (!d.valorDocumento || !/^[0-9]{1,32}$/.test(d.valorDocumento))) return 'Documento inválido (solo números, máximo 32)';
@@ -151,70 +148,13 @@ async function eliminarBeneficiario(idBeneficiario) {
     return { exito: r.exito, mensaje: r.mensaje };
 }
 
-// ---------------- Estados de cuenta ----------------
+// estados de cuenta 
 async function cargarEstadosCuenta() {
     const e = exigirCuenta();
     if (e) return e;
     const r = await servidor.consultarEstadosCuenta(
         sesion.usuario.IdUsuario, sesion.cuentaSeleccionada.IdCuenta, IP_CLIENTE);
     return { exito: r.exito, mensaje: r.mensaje, estados: r.datos };
-}
-
-// ---------------- Prueba en consola ----------------
-// Ejecutar con: node frontend/script.js
-async function pruebaEnConsola() {
-    try {
-        console.log('--- Login con password incorrecto ---');
-        console.log(await iniciarSesion('jaguero', 'incorrecta'));
-
-        console.log('--- Login correcto ---');
-        console.log(await iniciarSesion('jaguero', 'LaFacil'));
-
-        console.log('--- Cuentas del usuario ---');
-        const c = await cargarCuentas();
-        console.table(c.cuentas);
-
-        console.log('--- Seleccionar cuenta ---');
-        const idCuenta = c.cuentas[0].IdCuenta;
-        console.log(seleccionarCuenta(idCuenta));
-
-        console.log('--- Catálogos del formulario ---');
-        const cat = await cargarCatalogosBeneficiario();
-        console.table(cat.parentescos);
-
-        console.log('--- Beneficiarios ---');
-        const b = await cargarBeneficiarios();
-        console.table(b.beneficiarios);
-
-        console.log('--- Alerta de porcentajes ---');
-        console.log(await revisarAlertaPorcentajes());
-
-        console.log('--- Agregar beneficiario (la cuenta 1 ya tiene 3, debe rechazar) ---');
-        console.log(await agregarBeneficiario({
-            idTipoDocuIdentidad: 1, valorDocumento: '999888777', nombre: 'Prueba Uno',
-            fechaNacimiento: '1990-01-01', email: 'prueba@gmail.com',
-            telefono1: '88887777', telefono2: '22223333', idParentesco: 7, porcentaje: 10
-        }));
-
-        console.log('--- Estados de cuenta (últimos 8) ---');
-        const est = await cargarEstadosCuenta();
-        console.table(est.estados);
-
-        console.log('--- Intento de acceder a una cuenta ajena ---');
-        console.log(seleccionarCuenta(3));
-
-        console.log('--- Logout ---');
-        console.log(await cerrarSesion());
-    } catch (err) {
-        console.error('Error en la prueba:', err.message);
-    } finally {
-        await servidor.cerrarConexion();
-    }
-}
-
-// Solo corre la prueba si se ejecuta este archivo directamente
-if (require.main === module) {
-    pruebaEnConsola();
 }
 
 module.exports = {
