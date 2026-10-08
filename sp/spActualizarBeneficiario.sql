@@ -20,7 +20,7 @@ BEGIN
         -- busca el beneficiario ACTIVO y obtiene de él su cuenta y su persona.
         -- la cuenta se deduce aquí (y no se recibe como parámetro) para que nadie pueda enviar un beneficiario de una cuenta junto con otra cuenta.
         -- el FlagActivo = 1 evita editar uno ya eliminado
-        .
+        
         SELECT @IdCuenta = B.IdCuenta, @IdPersona = B.IdPersonaBeneficiario
         FROM dbo.Beneficiario AS B
         WHERE B.IdBeneficiario = @IdBeneficiario AND B.FlagActivo = 1;
