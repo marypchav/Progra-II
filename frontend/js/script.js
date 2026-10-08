@@ -1,5 +1,5 @@
 // Funciones que usará el frontend, estas guardan la sesión y llaman a backend/server.js.
-const servidor = require('../../backend/server.js');
+const servidor = require('../backend/server.js');
 
 // ip del cliente. mientras se tiene el sitio web se usa un valor fijo.
 const IP_CLIENTE = '127.0.0.1';

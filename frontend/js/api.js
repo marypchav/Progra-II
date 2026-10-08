@@ -1,6 +1,6 @@
 // api.js: único lugar que habla con el servidor.
 // Cambie USAR_DATOS_SIMULADOS a false cuando backend/app.js esté corriendo (http://localhost:3000).
-const USAR_DATOS_SIMULADOS = true;
+const USAR_DATOS_SIMULADOS = false;
 
 const TEXTO_ALERTA = 'la suma de los porcentajes de sus beneficiarios no suma 100, favor corregir y cancelar la edición';
 
