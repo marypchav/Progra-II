@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ingresar | Mi Ahorro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <main class="login-pagina">
+    <div class="login-caja">
+      <div class="login-marca"><span class="marca-logo" data-ico="shield"></span> Mi Ahorro</div>
+
+      <section class="tarjeta">
+        <header class="tarjeta-cab">
+          <span class="cab-ico" data-ico="lock"></span>
+          <h1>Ingresar al portal</h1>
+        </header>
+
+        <form id="formLogin" class="tarjeta-cuerpo" novalidate>
+          <!-- Mensajes: sesión cerrada, sesión expirada, credenciales incorrectas -->
+          <div id="avisoLogin" class="aviso" role="alert" hidden></div>
+
+          <div class="campo" id="cUsuario">
+            <label for="usuario">Usuario</label>
+            <input id="usuario" type="text" maxlength="64" autocomplete="username" placeholder="Ej: jaguero" autofocus>
+            <p class="error-txt">Ingrese su usuario.</p>
+          </div>
+
+          <div class="campo" id="cPass">
+            <label for="pass">Password</label>
+            <div class="input-clave">
+              <input id="pass" type="password" maxlength="64" autocomplete="current-password" placeholder="Su password">
+              <button id="verClave" class="ver-clave" type="button" aria-pressed="false">Mostrar</button>
+            </div>
+            <p class="error-txt">Ingrese su password.</p>
+            <p class="ayuda">Distingue mayúsculas y minúsculas.</p>
+          </div>
+
+          <div class="fila-botones">
+            <button id="btnIngresar" type="submit" class="btn primario">Ingresar</button>
+            <button id="btnLimpiar" type="button" class="btn secundario">Limpiar</button>
+          </div>
+        </form>
+      </section>
+
+      <p class="login-pie">¿Problemas para ingresar? Comuníquese con su sucursal.</p>
+
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/comun.js"></script>
+  <script src="js/login.js"></script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inicio | Mi Ahorro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header id="navbar" class="navbar"></header>
+
+  <main class="contenedor">
+    <div class="saludo">
+      <h1 id="titulo">Bienvenido</h1>
+      <p id="subtitulo"></p>
+    </div>
+
+    <!-- Alerta: cuentas cuyos beneficiarios no suman 100 -->
+    <div id="alertaCuentas" class="alerta-suma" role="alert" hidden>
+      <span class="alerta-ico" data-ico="alert"></span>
+      <div>
+        <strong>¡Atención!</strong>
+        <div class="alerta-texto" id="alertaTexto"></div>
+        <div class="alerta-suma-num" id="alertaLista"></div>
+      </div>
+    </div>
+
+    <div id="avisoAdmin" class="aviso info" hidden>
+      <span data-ico="shield"></span>
+      <span>Como administrador puede consultar los datos de cualquier cuenta de ahorro.</span>
+    </div>
+
+    <section class="tarjeta">
+      <header class="tarjeta-cab">
+        <span class="cab-ico" data-ico="card"></span>
+        <div>
+          <h2 id="tituloCuentas">Mis cuentas</h2>
+          <p class="sub">Elija una cuenta y la sección que desea consultar.</p>
+        </div>
+      </header>
+      <div class="tarjeta-cuerpo">
+        <div id="buscadorBox" class="buscador" hidden>
+          <span data-ico="search"></span>
+          <input id="buscador" type="search" placeholder="Buscar por número de cuenta o por dueño" aria-label="Buscar cuenta">
+        </div>
+        <div id="contenido"><div class="cargando">Cargando cuentas...</div></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/comun.js"></script>
+  <script src="js/inicio.js"></script>
+</body>
+</html>
