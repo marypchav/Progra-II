@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Estados de cuenta | Mi Ahorro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header id="navbar" class="navbar"></header>
+
+  <main class="contenedor">
+    <nav class="migas" aria-label="Ruta">
+      <a href="inicio.html">Inicio</a><span>/</span><span>Estados de cuenta</span>
+    </nav>
+
+    <section class="tarjeta">
+      <header class="tarjeta-cab">
+        <span class="cab-ico" data-ico="file"></span>
+        <div>
+          <h2>Estados de cuenta</h2>
+          <p class="sub">Los últimos 8 estados, del más reciente al más antiguo.</p>
+        </div>
+      </header>
+      <div class="tarjeta-cuerpo">
+        <div id="contenido"><div class="cargando">Cargando estados de cuenta...</div></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/comun.js"></script>
+  <script src="js/estados.js"></script>
+</body>
+</html>
