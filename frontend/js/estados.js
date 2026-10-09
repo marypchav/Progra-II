@@ -1,49 +1,60 @@
-// estados.js: lista de los últimos 8 estados de cuenta (más reciente primero)
+// estados.js: últimos 8 estados de cuenta de la cuenta elegida (más reciente primero).
 (async () => {
   const ctx = await arrancar('estados', true);
   if (!ctx) return;
-  const cuenta = ctx.cuenta;
-  const s = cuenta.Simbolo;
+  const { cuenta } = ctx;
+  const contenido = $('contenido');
+  const sim = cuenta.Simbolo;
 
-  async function cargar() {
-    $('cuerpo').innerHTML = '<div class="cargando">Consultando estados de cuenta...</div>';
-    let r;
-    try { r = await Api.estados(cuenta.IdCuenta); }
-    catch (e) { pintarError($('cuerpo'), 'No hay conexión con el servidor. Revise que esté encendido.', cargar); return; }
-    if (!r.exito) { pintarError($('cuerpo'), r.mensaje, cargar); return; }
+  const num = (v) => (v === null || v === undefined ? '—' : escapar(dinero(v, sim)));
 
-    const lista = r.estados || [];
-    if (lista.length === 0) {
-      $('cuerpo').innerHTML = `<div class="estado-vacio"><span class="estado-ico">${icono('file')}</span>
-        <h3>Sin estados de cuenta</h3><p>Esta cuenta todavía no tiene estados de cuenta emitidos.</p></div>`;
-      return;
-    }
-
-    // El orden ya viene del servidor (fecha de emisión descendente); aquí no se reordena.
-    $('cuerpo').innerHTML = `
-      <div class="tabla-wrap"><table>
-        <thead><tr>
-          <th>Fecha del estado</th><th>Período</th>
-          <th class="num">Saldo inicial</th><th class="num">Saldo final</th><th class="num">Saldo mínimo</th>
-          <th class="num">Intereses acumulados</th><th class="num">Retiros</th><th class="num">Depósitos</th>
-          <th class="num">SINPE móvil entrantes</th><th class="num">SINPE móvil salientes</th>
-        </tr></thead>
-        <tbody>${lista.map(x => `
-          <tr class="clic" data-id="${x.IdEstadoCuenta}" title="Los movimientos del mes estarán disponibles en la próxima fase">
-            <td class="nowrap">${fechaLarga(x.FechaEmision)}</td>
-            <td class="nowrap">${fechaLarga(x.FechaInicio)} al ${fechaLarga(x.FechaFin)}</td>
-            <td class="num nowrap">${escapar(dinero(x.SaldoInicial, s))}</td>
-            <td class="num nowrap">${escapar(dinero(x.SaldoFinal, s))}</td>
-            <td class="num nowrap">${escapar(dinero(x.SaldoMinimo, s))}</td>
-            <td class="num nowrap">${escapar(dinero(x.InteresesAcumulados, s))}</td>
-            <td class="num">${x.CantRetiros ?? 0}</td>
-            <td class="num">${x.CantDepositos ?? 0}</td>
-            <td class="num">${x.CantSinpeEntrantes ?? 0}</td>
-            <td class="num">${x.CantSinpeSalientes ?? 0}</td>
-          </tr>`).join('')}</tbody></table></div>
-      <p class="nota-pie">${icono('info')} Cada línea es un estado de cuenta. El detalle de movimientos del mes se mostrará en una próxima fase.</p>`;
-    // Cada fila es cliqueable, pero en esta fase hacer clic no hace nada (TP3: mostrar movimientos del mes).
+  let r;
+  try {
+    r = await Api.estados(cuenta.IdCuenta);
+  } catch (e) {
+    r = null;
   }
 
-  await cargar();
+  if (!r) {
+    contenido.innerHTML = `<div class="estado-vacio error"><span class="estado-ico">${icono('xcircle')}</span>
+      <h3>No se pudo conectar</h3><p>Revise que el servidor esté encendido e intente de nuevo.</p>
+      <div class="estado-acc"><button class="btn primario" onclick="location.reload()">Reintentar</button></div></div>`;
+    return;
+  }
+  if (!r.exito) {
+    contenido.innerHTML = `<div class="estado-vacio error"><span class="estado-ico">${icono('xcircle')}</span>
+      <h3>No se pudieron cargar los estados</h3><p>${escapar(r.mensaje)}</p></div>`;
+    return;
+  }
+
+  const estados = r.estados || [];
+  if (!estados.length) {
+    contenido.innerHTML = `<div class="estado-vacio"><span class="estado-ico">${icono('file')}</span>
+      <h3>Sin estados de cuenta</h3><p>Esta cuenta todavía no tiene estados emitidos.</p></div>`;
+    return;
+  }
+
+  contenido.innerHTML = `<div class="tabla-wrap"><table>
+    <thead><tr>
+      <th>Fecha de emisión</th><th>Período</th>
+      <th class="num">Saldo inicial</th><th class="num">Saldo final</th><th class="num">Saldo mínimo</th>
+      <th class="num">Intereses</th><th class="num">Retiros</th><th class="num">Depósitos</th>
+      <th class="num">SINPE entrantes</th><th class="num">SINPE salientes</th>
+    </tr></thead>
+    <tbody>${estados.map(e => `
+      <tr class="clic" data-id="${e.IdEstadoCuenta}">
+        <td class="nowrap">${fechaLarga(e.FechaEmision)}</td>
+        <td class="nowrap">${fechaLarga(e.FechaInicio)} – ${fechaLarga(e.FechaFin)}</td>
+        <td class="num nowrap">${num(e.SaldoInicial)}</td>
+        <td class="num nowrap">${num(e.SaldoFinal)}</td>
+        <td class="num nowrap">${num(e.SaldoMinimo)}</td>
+        <td class="num nowrap">${num(e.InteresesAcumulados)}</td>
+        <td class="num">${e.CantRetiros ?? '—'}</td>
+        <td class="num">${e.CantDepositos ?? '—'}</td>
+        <td class="num">${e.CantSinpeEntrantes ?? '—'}</td>
+        <td class="num">${e.CantSinpeSalientes ?? '—'}</td>
+      </tr>`).join('')}</tbody></table></div>
+    <p class="nota-pie">${icono('info')} El detalle de movimientos de cada estado estará disponible en una fase posterior.</p>`;
+
+  // Para esta fase, al dar clic en una fila no pasa nada (TP3 mostrará los movimientos).
 })();
