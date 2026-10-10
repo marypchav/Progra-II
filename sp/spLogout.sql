@@ -1,30 +1,84 @@
-CREATE OR ALTER   PROCEDURE [dbo].[spLogout]
-    @IdUsuario     INT -- quién cierra sesión
-    , @IP          VARCHAR(64) -- ip del cliente, para la bitácora
-    , @OutResultCode INT OUTPUT -- parámetro de salida: 0 = éxito, otro número = error
+CREATE OR ALTER PROCEDURE dbo.spLogout
+    @inIdUsuario INT -- quién cierra sesión
+    , @inIP VARCHAR(64) -- ip del cliente, para la bitácora
+    , @outResultCode INT OUTPUT -- 0 = éxito, otro número = código de error
 AS
+/*
+Ejemplo de ejecución:
+    DECLARE @resultado INT;
+
+    EXEC dbo.spLogout
+        @inIdUsuario = 1
+        , @inIP = '127.0.0.1'
+        , @outResultCode = @resultado OUTPUT;
+
+    SELECT @resultado AS ResultCode;
+*/
 BEGIN
     SET NOCOUNT ON; -- evita mensajes de "N filas afectadas"
-    SET @OutResultCode = 0; -- se asume éxito
+
     BEGIN TRY
 
-        -- el usuario debe existir (Bitacora.IdUsuario es una llave foránea)
+        -- constantes
+        DECLARE @tipoOperacionLogout INT = 2; -- TipoOperacion "Logout" del catálogo
 
-        IF NOT EXISTS (SELECT 1 FROM dbo.Usuario WHERE IdUsuario = @IdUsuario)
+        -- inicializaciones
+        SET @outResultCode = 0; -- se asume éxito
+
+        -- validaciones
+        -- el usuario debe existir (Bitacora.IdUsuario es llave foránea)
+        IF NOT EXISTS (
+            SELECT 1
+            FROM dbo.Usuario AS U
+            WHERE (U.IdUsuario = @inIdUsuario)
+        )
         BEGIN
-            SET @OutResultCode = 50001;
+            SET @outResultCode = 50001; -- usuario no existe
             RETURN;
-        END
+        END;
 
-        -- registra el logout en la bitácora (IdTipoOperacion 2 = Logout). el antes y después quedan en NULL porque un logout no modifica datos.
+        -- actualización: registra el logout en la bitácora.
+        -- DatosAntes y DatosDespues quedan en NULL porque un logout no modifica datos
+        INSERT INTO dbo.Bitacora (
+            IdUsuario
+            , IdTipoOperacion
+            , IP
+        )
+        VALUES (
+            @inIdUsuario
+            , @tipoOperacionLogout
+            , @inIP
+        );
 
-        INSERT dbo.Bitacora (IdUsuario, IdTipoOperacion, IP)
-        VALUES (@IdUsuario, 2, @IP);
     END TRY
     BEGIN CATCH
 
-        SET @OutResultCode = 50000;
-        SELECT ERROR_MESSAGE() AS MensajeError;
-    END CATCH
+        -- registra el error en la tabla de errores
+        INSERT INTO dbo.dbError (
+            UserName
+            , ErrorNumber
+            , ErrorState
+            , ErrorSeverity
+            , ErrorLine
+            , ErrorProcedure
+            , ErrorMessage
+            , ErrorDateTime
+        )
+        VALUES (
+            SUSER_SNAME()
+            , ERROR_NUMBER()
+            , ERROR_STATE()
+            , ERROR_SEVERITY()
+            , ERROR_LINE()
+            , ERROR_PROCEDURE()
+            , ERROR_MESSAGE()
+            , GETDATE()
+        );
+
+        SET @outResultCode = 50000; -- error inesperado
+
+    END CATCH;
+
+    SET NOCOUNT OFF;
 END;
 GO
