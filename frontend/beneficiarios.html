@@ -21,6 +21,19 @@
         <strong>¡Atención!</strong>
         <div class="alerta-texto" id="textoAlerta"></div>
         <div class="alerta-suma-num" id="sumaActual"></div>
+
+  <main class="contenedor">
+    <nav class="migas" aria-label="Ruta">
+      <a href="inicio.html">Inicio</a><span>/</span><span>Beneficiarios</span>
+    </nav>
+
+    <!-- Alerta: los porcentajes no suman 100 -->
+    <div id="alertaSuma" class="alerta-suma" role="alert" hidden>
+      <span class="alerta-ico" data-ico="alert"></span>
+      <div>
+        <strong>¡Atención!</strong>
+        <div class="alerta-texto" id="alertaTexto"></div>
+        <div class="alerta-suma-num" id="alertaNum"></div>
       </div>
     </div>
 
@@ -38,6 +51,16 @@
 
       <div class="tarjeta-cuerpo" id="cuerpo">
         <div class="cargando">Cargando beneficiarios...</div>
+          <h2>Beneficiarios</h2>
+          <p class="sub">Máximo 3 beneficiarios activos. Los porcentajes deben sumar 100.</p>
+        </div>
+        <div class="cab-der">
+          <button id="btnAgregar" class="btn blanco" type="button"><span data-ico="plus"></span> Agregar beneficiario</button>
+        </div>
+      </header>
+      <div class="tarjeta-cuerpo">
+        <div id="distribucion"></div>
+        <div id="contenido"><div class="cargando">Cargando beneficiarios...</div></div>
       </div>
     </section>
   </main>
@@ -47,3 +70,4 @@
   <script src="js/beneficiarios.js"></script>
 </body>
 </html>
+</html>s
