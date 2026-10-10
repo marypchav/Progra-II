@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Beneficiarios | Mi Ahorro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header id="navbar" class="navbar"></header>
+  <div id="ctx" class="ctx"></div>
+
+  <main class="contenedor">
+    <!-- Rótulo llamativo: la suma de porcentajes no es 100 -->
+    <div id="alertaPorc" class="alerta-suma" role="alert" hidden>
+      <span class="alerta-ico" data-ico="alert"></span>
+      <div>
+        <strong>¡Atención!</strong>
+        <div class="alerta-texto" id="textoAlerta"></div>
+        <div class="alerta-suma-num" id="sumaActual"></div>
+      </div>
+    </div>
+
+    <section class="tarjeta">
+      <header class="tarjeta-cab">
+        <span class="cab-ico" data-ico="users"></span>
+        <div>
+          <h1>Beneficiarios</h1>
+          <p class="sub" id="subCab">Reciben su saldo en el porcentaje indicado. Máximo 3 por cuenta.</p>
+        </div>
+        <div class="cab-der">
+          <button id="btnAgregar" class="btn blanco" type="button"><span data-ico="userPlus"></span> Agregar beneficiario</button>
+        </div>
+      </header>
+
+      <div class="tarjeta-cuerpo" id="cuerpo">
+        <div class="cargando">Cargando beneficiarios...</div>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/comun.js"></script>
+  <script src="js/beneficiarios.js"></script>
+</body>
+</html>
