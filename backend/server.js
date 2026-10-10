@@ -18,19 +18,19 @@ const config = {
 
 // nombres de los SP en un solo lugar
 const SP = {
-    LOGIN: 'spLogin',
-    LOGOUT: 'spLogout',
-    CUENTAS_USUARIO: 'spObtenerCuentasUsuario',
-    CATALOGOS_BENEFICIARIO: 'spObtenerCatalogosBeneficiario',
-    LISTAR_BENEFICIARIOS: 'spListarBeneficiarios',
-    ALERTA_PORCENTAJES: 'spAlertaPorcentajes',
-    AGREGAR_BENEFICIARIO: 'spAgregarBeneficiario',
-    ACTUALIZAR_BENEFICIARIO: 'spActualizarBeneficiario',
-    ELIMINAR_BENEFICIARIO: 'spEliminarBeneficiario',
-    ESTADOS_CUENTA: 'spConsultarEstadosCuenta'
+    LOGIN: 'dbo.spLogin',
+    LOGOUT: 'dbo.spLogout',
+    CUENTAS_USUARIO: 'dbo.spObtenerCuentaUsuario',
+    CATALOGOS_BENEFICIARIO: 'dbo.spObtenerCatalogoBeneficiario',
+    LISTAR_BENEFICIARIOS: 'dbo.spListarBeneficiario',
+    ALERTA_PORCENTAJES: 'dbo.spAlertaPorcentaje',
+    AGREGAR_BENEFICIARIO: 'dbo.spAgregarBeneficiario',
+    ACTUALIZAR_BENEFICIARIO: 'dbo.spActualizarBeneficiario',
+    ELIMINAR_BENEFICIARIO: 'dbo.spEliminarBeneficiario',
+    ESTADOS_CUENTA: 'dbo.spConsultarEstadoCuenta'
 };
 
-// mensajes para los códigos de error que devuelven los SP
+// mensajes para los códigos de error que devuelven los SP en @outResultCode
 const MENSAJES_ERROR = {
     0: 'Operación exitosa',
     50000: 'Error inesperado en la base de datos',
@@ -50,7 +50,7 @@ const MENSAJES_ERROR = {
     50014: 'La cuenta no existe'
 };
 
-// conexión con solo un pool para todo el programa, menos código
+// conexión con solo un pool para todo el programa
 let pool = null;
 
 async function obtenerPool() {
@@ -67,20 +67,20 @@ async function cerrarConexion() {
     }
 }
 
-// función genérica para ejecutar un SP, entradas: [{ nombre, tipo, valor }]
-async function ejecutarSP(nombreSP, entradas = [], conCodigo = true) {
+// función genérica para ejecutar un SP.
+// entradas: [{ nombre, tipo, valor }], el nombre va SIN la @ (ej. 'inIdUsuario').
+// todos los SP tienen el parámetro de salida @outResultCode.
+async function ejecutarSP(nombreSP, entradas = []) {
     const p = await obtenerPool();
     const request = p.request();
 
     for (const e of entradas) {
         request.input(e.nombre, e.tipo, e.valor);
     }
-    if (conCodigo) {
-        request.output('OutResultCode', sql.Int);
-    }
+    request.output('outResultCode', sql.Int);
 
     const result = await request.execute(nombreSP);
-    const codigo = conCodigo ? result.output.OutResultCode : 0;
+    const codigo = result.output.outResultCode;
 
     return {
         codigo,
@@ -95,9 +95,9 @@ async function ejecutarSP(nombreSP, entradas = [], conCodigo = true) {
 
 async function login(userName, pass, ip) {
     const r = await ejecutarSP(SP.LOGIN, [
-        { nombre: 'UserName', tipo: sql.VarChar(64), valor: userName },
-        { nombre: 'Pass', tipo: sql.VarChar(64), valor: pass },
-        { nombre: 'IP', tipo: sql.VarChar(64), valor: ip }
+        { nombre: 'inUserName', tipo: sql.VarChar(64), valor: userName },
+        { nombre: 'inPass', tipo: sql.VarChar(64), valor: pass },
+        { nombre: 'inIP', tipo: sql.VarChar(64), valor: ip }
     ]);
     // si el login sirve, el SP devuelve una fila con los datos del usuario
     r.usuario = r.exito ? r.datos[0] : null;
@@ -106,21 +106,20 @@ async function login(userName, pass, ip) {
 
 async function logout(idUsuario, ip) {
     return ejecutarSP(SP.LOGOUT, [
-        { nombre: 'IdUsuario', tipo: sql.Int, valor: idUsuario },
-        { nombre: 'IP', tipo: sql.VarChar(64), valor: ip }
+        { nombre: 'inIdUsuario', tipo: sql.Int, valor: idUsuario },
+        { nombre: 'inIP', tipo: sql.VarChar(64), valor: ip }
     ]);
 }
 
-// este SP no tiene @OutResultCode
 async function obtenerCuentasUsuario(idUsuario) {
     return ejecutarSP(SP.CUENTAS_USUARIO, [
-        { nombre: 'IdUsuario', tipo: sql.Int, valor: idUsuario }
-    ], false);
+        { nombre: 'inIdUsuario', tipo: sql.Int, valor: idUsuario }
+    ]);
 }
 
 // este SP devuelve 2 resultados: parentescos y tipos de documento
 async function obtenerCatalogosBeneficiario() {
-    const r = await ejecutarSP(SP.CATALOGOS_BENEFICIARIO, [], false);
+    const r = await ejecutarSP(SP.CATALOGOS_BENEFICIARIO, []);
     r.parentescos = r.recordsets[0] || [];
     r.tiposDocumento = r.recordsets[1] || [];
     return r;
@@ -128,15 +127,15 @@ async function obtenerCatalogosBeneficiario() {
 
 async function listarBeneficiarios(idUsuario, idCuenta) {
     return ejecutarSP(SP.LISTAR_BENEFICIARIOS, [
-        { nombre: 'IdUsuario', tipo: sql.Int, valor: idUsuario },
-        { nombre: 'IdCuenta', tipo: sql.Int, valor: idCuenta }
+        { nombre: 'inIdUsuario', tipo: sql.Int, valor: idUsuario },
+        { nombre: 'inIdCuenta', tipo: sql.Int, valor: idCuenta }
     ]);
 }
 
 async function alertaPorcentajes(idUsuario, idCuenta) {
     const r = await ejecutarSP(SP.ALERTA_PORCENTAJES, [
-        { nombre: 'IdUsuario', tipo: sql.Int, valor: idUsuario },
-        { nombre: 'IdCuenta', tipo: sql.Int, valor: idCuenta }
+        { nombre: 'inIdUsuario', tipo: sql.Int, valor: idUsuario },
+        { nombre: 'inIdCuenta', tipo: sql.Int, valor: idCuenta }
     ]);
     if (r.exito && r.datos.length > 0) {
         r.suma = r.datos[0].SumaPorcentajes;
@@ -148,18 +147,18 @@ async function alertaPorcentajes(idUsuario, idCuenta) {
 // d = { idTipoDocuIdentidad, valorDocumento, nombre, fechaNacimiento ('YYYY-MM-DD'), email, telefono1, telefono2, idParentesco, porcentaje }
 async function agregarBeneficiario(idUsuario, idCuenta, ip, d) {
     return ejecutarSP(SP.AGREGAR_BENEFICIARIO, [
-        { nombre: 'IdUsuario', tipo: sql.Int, valor: idUsuario },
-        { nombre: 'IdCuenta', tipo: sql.Int, valor: idCuenta },
-        { nombre: 'IP', tipo: sql.VarChar(64), valor: ip },
-        { nombre: 'IdTipoDocuIdentidad', tipo: sql.Int, valor: d.idTipoDocuIdentidad },
-        { nombre: 'ValorDocumento', tipo: sql.VarChar(32), valor: d.valorDocumento },
-        { nombre: 'Nombre', tipo: sql.VarChar(64), valor: d.nombre },
-        { nombre: 'FechaNacimiento', tipo: sql.Date, valor: convertirFecha(d.fechaNacimiento) },
-        { nombre: 'Email', tipo: sql.VarChar(64), valor: d.email },
-        { nombre: 'Telefono1', tipo: sql.VarChar(64), valor: d.telefono1 },
-        { nombre: 'Telefono2', tipo: sql.VarChar(64), valor: d.telefono2 },
-        { nombre: 'IdParentesco', tipo: sql.Int, valor: d.idParentesco },
-        { nombre: 'Porcentaje', tipo: sql.Int, valor: d.porcentaje }
+        { nombre: 'inIdUsuario', tipo: sql.Int, valor: idUsuario },
+        { nombre: 'inIdCuenta', tipo: sql.Int, valor: idCuenta },
+        { nombre: 'inIP', tipo: sql.VarChar(64), valor: ip },
+        { nombre: 'inIdTipoDocuIdentidad', tipo: sql.Int, valor: d.idTipoDocuIdentidad },
+        { nombre: 'inValorDocumento', tipo: sql.VarChar(32), valor: d.valorDocumento },
+        { nombre: 'inNombre', tipo: sql.VarChar(64), valor: d.nombre },
+        { nombre: 'inFechaNacimiento', tipo: sql.Date, valor: convertirFecha(d.fechaNacimiento) },
+        { nombre: 'inEmail', tipo: sql.VarChar(64), valor: d.email },
+        { nombre: 'inTelefono1', tipo: sql.VarChar(64), valor: d.telefono1 },
+        { nombre: 'inTelefono2', tipo: sql.VarChar(64), valor: d.telefono2 },
+        { nombre: 'inIdParentesco', tipo: sql.Int, valor: d.idParentesco },
+        { nombre: 'inPorcentaje', tipo: sql.Int, valor: d.porcentaje }
     ]);
 }
 
@@ -167,32 +166,32 @@ async function agregarBeneficiario(idUsuario, idCuenta, ip, d) {
 // el tipo y valor del documento no se editan
 async function actualizarBeneficiario(idUsuario, idBeneficiario, ip, d) {
     return ejecutarSP(SP.ACTUALIZAR_BENEFICIARIO, [
-        { nombre: 'IdUsuario', tipo: sql.Int, valor: idUsuario },
-        { nombre: 'IdBeneficiario', tipo: sql.Int, valor: idBeneficiario },
-        { nombre: 'IP', tipo: sql.VarChar(64), valor: ip },
-        { nombre: 'Nombre', tipo: sql.VarChar(64), valor: d.nombre },
-        { nombre: 'FechaNacimiento', tipo: sql.Date, valor: convertirFecha(d.fechaNacimiento) },
-        { nombre: 'Email', tipo: sql.VarChar(64), valor: d.email },
-        { nombre: 'Telefono1', tipo: sql.VarChar(64), valor: d.telefono1 },
-        { nombre: 'Telefono2', tipo: sql.VarChar(64), valor: d.telefono2 },
-        { nombre: 'IdParentesco', tipo: sql.Int, valor: d.idParentesco },
-        { nombre: 'Porcentaje', tipo: sql.Int, valor: d.porcentaje }
+        { nombre: 'inIdUsuario', tipo: sql.Int, valor: idUsuario },
+        { nombre: 'inIdBeneficiario', tipo: sql.Int, valor: idBeneficiario },
+        { nombre: 'inIP', tipo: sql.VarChar(64), valor: ip },
+        { nombre: 'inNombre', tipo: sql.VarChar(64), valor: d.nombre },
+        { nombre: 'inFechaNacimiento', tipo: sql.Date, valor: convertirFecha(d.fechaNacimiento) },
+        { nombre: 'inEmail', tipo: sql.VarChar(64), valor: d.email },
+        { nombre: 'inTelefono1', tipo: sql.VarChar(64), valor: d.telefono1 },
+        { nombre: 'inTelefono2', tipo: sql.VarChar(64), valor: d.telefono2 },
+        { nombre: 'inIdParentesco', tipo: sql.Int, valor: d.idParentesco },
+        { nombre: 'inPorcentaje', tipo: sql.Int, valor: d.porcentaje }
     ]);
 }
 
 async function eliminarBeneficiario(idUsuario, idBeneficiario, ip) {
     return ejecutarSP(SP.ELIMINAR_BENEFICIARIO, [
-        { nombre: 'IdUsuario', tipo: sql.Int, valor: idUsuario },
-        { nombre: 'IdBeneficiario', tipo: sql.Int, valor: idBeneficiario },
-        { nombre: 'IP', tipo: sql.VarChar(64), valor: ip }
+        { nombre: 'inIdUsuario', tipo: sql.Int, valor: idUsuario },
+        { nombre: 'inIdBeneficiario', tipo: sql.Int, valor: idBeneficiario },
+        { nombre: 'inIP', tipo: sql.VarChar(64), valor: ip }
     ]);
 }
 
 async function consultarEstadosCuenta(idUsuario, idCuenta, ip) {
     return ejecutarSP(SP.ESTADOS_CUENTA, [
-        { nombre: 'IdUsuario', tipo: sql.Int, valor: idUsuario },
-        { nombre: 'IdCuenta', tipo: sql.Int, valor: idCuenta },
-        { nombre: 'IP', tipo: sql.VarChar(64), valor: ip }
+        { nombre: 'inIdUsuario', tipo: sql.Int, valor: idUsuario },
+        { nombre: 'inIdCuenta', tipo: sql.Int, valor: idCuenta },
+        { nombre: 'inIP', tipo: sql.VarChar(64), valor: ip }
     ]);
 }
 

@@ -1,83 +1,181 @@
-CREATE OR ALTER   PROCEDURE [dbo].[spEliminarBeneficiario]
-    @IdUsuario        INT -- quién elimina. sirve para verificar el acceso y para la bitácora
-    , @IdBeneficiario INT -- cuál beneficiario se elimina
-    , @IP             VARCHAR(64) -- ip del cliente, para la bitácora
-    , @OutResultCode  INT OUTPUT -- parámetro de salida: 0 = éxito, otro número = error
+CREATE OR ALTER PROCEDURE dbo.spEliminarBeneficiario
+    @inIdUsuario INT -- quién elimina, para el acceso y la bitácora
+    , @inIdBeneficiario INT -- cuál beneficiario se elimina
+    , @inIP VARCHAR(64) -- ip del cliente, para la bitácora
+    , @outResultCode INT OUTPUT -- 0 = éxito, otro número = código de error
 AS
+/*
+Ejemplo de ejecución:
+    DECLARE @resultado INT;
+
+    EXEC dbo.spEliminarBeneficiario
+        @inIdUsuario = 1
+        , @inIdBeneficiario = 1
+        , @inIP = '127.0.0.1'
+        , @outResultCode = @resultado OUTPUT;
+
+    SELECT @resultado AS ResultCode;
+*/
 BEGIN
     SET NOCOUNT ON; -- evita mensajes de "N filas afectadas"
-    SET @OutResultCode = 0; -- se asume éxito
+
     BEGIN TRY
-        DECLARE @IdCuenta INT; -- se llena al buscar el beneficiario
 
+        -- constantes
+        DECLARE @true BIT = 1
+            , @false BIT = 0
+            , @tipoOperacionEliminar INT = 5; -- TipoOperacion "Eliminar beneficiario"
+
+        -- variables de uso general
+        DECLARE @esAdministrador BIT
+            , @idCuenta INT;
+
+        -- inicializaciones
+        SET @outResultCode = 0; -- se asume éxito
+        SET @esAdministrador = @false;
+        SET @idCuenta = NULL;
+
+        -- validaciones
         -- busca el beneficiario activo y obtiene su cuenta
-
-        SELECT @IdCuenta = B.IdCuenta
+        SELECT @idCuenta = B.IdCuenta
         FROM dbo.Beneficiario AS B
-        WHERE B.IdBeneficiario = @IdBeneficiario AND B.FlagActivo = 1;
+        WHERE (B.IdBeneficiario = @inIdBeneficiario)
+            AND (B.FlagActivo = @true);
 
-        -- si no se encontró, el beneficiario no existe o ya está inactivo
+        IF (@idCuenta IS NULL)
+        BEGIN
+            SET @outResultCode = 50013; -- no existe o ya está inactivo
+            RETURN;
+        END;
 
-        IF @IdCuenta IS NULL
-        BEGIN SET @OutResultCode = 50013; RETURN; END
+        -- el usuario debe ser administrador o tener la cuenta en UsuarioPuedeVer
+        SELECT @esAdministrador = U.EsAdministrador
+        FROM dbo.Usuario AS U
+        WHERE (U.IdUsuario = @inIdUsuario);
 
-        -- verifica el acceso. el usuario debe ser administrador o tener la cuenta en UsuarioPuedeVer
+        IF (@esAdministrador = @false)
+            AND NOT EXISTS (
+                SELECT 1
+                FROM dbo.UsuarioPuedeVer AS UPV
+                WHERE (UPV.IdUsuario = @inIdUsuario)
+                    AND (UPV.IdCuenta = @idCuenta)
+            )
+        BEGIN
+            SET @outResultCode = 50002; -- sin acceso a la cuenta
+            RETURN;
+        END;
 
-        IF NOT EXISTS (SELECT 1 FROM dbo.Usuario AS U
-                       WHERE U.IdUsuario = @IdUsuario
-                         AND (U.EsAdministrador = 1
-                              OR EXISTS (SELECT 1 FROM dbo.UsuarioPuedeVer V
-                                         WHERE V.IdUsuario = U.IdUsuario AND V.IdCuenta = @IdCuenta)))
-        BEGIN SET @OutResultCode = 50002; RETURN; END
+        -- variables para el preprocesamiento y la transacción
+        DECLARE @fechaDesactivacion DATETIME
+            , @jsonAntes NVARCHAR(MAX)
+            , @jsonDespues NVARCHAR(MAX);
 
-        -- desde aquí se modifican datos, así que se abre una transacción en donde o se guardan TODOS los cambios (persona, beneficiario y bitácora) o ninguno
-
-        BEGIN TRANSACTION;
+        -- preprocesamiento
+        -- la fecha se calcula una vez y se usa igual en el UPDATE y en el JSON
+        SET @fechaDesactivacion = GETDATE();
 
         -- JSON con el estado antes (FlagActivo = 1)
-
-        DECLARE @JsonAntes NVARCHAR(MAX) =
-        (SELECT B.IdBeneficiario, C.NumeroCuenta, P.ValorDocumentoIdentidad, P.Nombre
-              , PA.Nombre AS Parentesco, B.Porcentaje, B.FlagActivo, B.FechaDesactivacion
-         FROM dbo.Beneficiario AS B
-         JOIN dbo.Cuenta     AS C  ON C.IdCuenta = B.IdCuenta
-         JOIN dbo.Persona    AS P  ON P.IdPersona = B.IdPersonaBeneficiario
-         JOIN dbo.Parentesco AS PA ON PA.IdParentesco = B.IdParentesco
-         WHERE B.IdBeneficiario = @IdBeneficiario
-         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
-
-        -- se pone FlagActivo en 0 y se guarda la fecha y hora de desactivación para hacer una eliminación lógica
-
-        UPDATE dbo.Beneficiario
-        SET FlagActivo = 0, FechaDesactivacion = GETDATE()
-        WHERE IdBeneficiario = @IdBeneficiario;
+        SET @jsonAntes = (
+            SELECT B.IdBeneficiario
+                , C.NumeroCuenta
+                , P.ValorDocumentoIdentidad
+                , P.Nombre
+                , PA.Nombre AS Parentesco
+                , B.Porcentaje
+                , B.FlagActivo
+                , B.FechaDesactivacion
+            FROM dbo.Beneficiario AS B
+            INNER JOIN dbo.Cuenta AS C
+                ON (C.IdCuenta = B.IdCuenta)
+            INNER JOIN dbo.Persona AS P
+                ON (P.IdPersona = B.IdPersonaBeneficiario)
+            INNER JOIN dbo.Parentesco AS PA
+                ON (PA.IdParentesco = B.IdParentesco)
+            WHERE (B.IdBeneficiario = @inIdBeneficiario)
+            FOR JSON PATH, INCLUDE_NULL_VALUES, WITHOUT_ARRAY_WRAPPER
+        );
 
         -- JSON con el estado después (FlagActivo = 0 y con fecha de desactivación)
+        SET @jsonDespues = (
+            SELECT B.IdBeneficiario
+                , C.NumeroCuenta
+                , P.ValorDocumentoIdentidad
+                , P.Nombre
+                , PA.Nombre AS Parentesco
+                , B.Porcentaje
+                , @false AS FlagActivo
+                , @fechaDesactivacion AS FechaDesactivacion
+            FROM dbo.Beneficiario AS B
+            INNER JOIN dbo.Cuenta AS C
+                ON (C.IdCuenta = B.IdCuenta)
+            INNER JOIN dbo.Persona AS P
+                ON (P.IdPersona = B.IdPersonaBeneficiario)
+            INNER JOIN dbo.Parentesco AS PA
+                ON (PA.IdParentesco = B.IdParentesco)
+            WHERE (B.IdBeneficiario = @inIdBeneficiario)
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
 
-        DECLARE @JsonDespues NVARCHAR(MAX) =
-        (SELECT B.IdBeneficiario, C.NumeroCuenta, P.ValorDocumentoIdentidad, P.Nombre
-              , PA.Nombre AS Parentesco, B.Porcentaje, B.FlagActivo, B.FechaDesactivacion
-         FROM dbo.Beneficiario AS B
-         JOIN dbo.Cuenta     AS C  ON C.IdCuenta = B.IdCuenta
-         JOIN dbo.Persona    AS P  ON P.IdPersona = B.IdPersonaBeneficiario
-         JOIN dbo.Parentesco AS PA ON PA.IdParentesco = B.IdParentesco
-         WHERE B.IdBeneficiario = @IdBeneficiario
-         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+        -- transacción: la eliminación lógica y la bitácora van juntas
+        BEGIN TRANSACTION tEliminarBeneficiario;
 
-        -- registra en la bitácora (IdTipoOperacion 5 = Eliminar beneficiario) con el JSON de antes y de después
+            UPDATE dbo.Beneficiario
+            SET FlagActivo = @false
+                , FechaDesactivacion = @fechaDesactivacion
+            WHERE (IdBeneficiario = @inIdBeneficiario);
 
-        INSERT dbo.Bitacora (IdUsuario, IdTipoOperacion, IP, DatosAntes, DatosDespues)
-        VALUES (@IdUsuario, 5, @IP, @JsonAntes, @JsonDespues);
+            INSERT INTO dbo.Bitacora (
+                IdUsuario
+                , IdTipoOperacion
+                , IP
+                , DatosAntes
+                , DatosDespues
+            )
+            VALUES (
+                @inIdUsuario
+                , @tipoOperacionEliminar
+                , @inIP
+                , @jsonAntes
+                , @jsonDespues
+            );
 
-        -- se confirman los cambios de forma definitiva
+        COMMIT TRANSACTION tEliminarBeneficiario;
 
-        COMMIT TRANSACTION;
     END TRY
     BEGIN CATCH
 
-        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
-        SET @OutResultCode = 50000;
-        SELECT ERROR_MESSAGE() AS MensajeError; -- devuelve el texto del error para depurar
-    END CATCH
+        -- si quedó una transacción abierta, se deshace
+        IF (@@TRANCOUNT > 0)
+        BEGIN
+            ROLLBACK TRANSACTION;
+        END;
+
+        -- registra el error en la tabla de errores
+        INSERT INTO dbo.dbError (
+            UserName
+            , ErrorNumber
+            , ErrorState
+            , ErrorSeverity
+            , ErrorLine
+            , ErrorProcedure
+            , ErrorMessage
+            , ErrorDateTime
+        )
+        VALUES (
+            SUSER_SNAME()
+            , ERROR_NUMBER()
+            , ERROR_STATE()
+            , ERROR_SEVERITY()
+            , ERROR_LINE()
+            , ERROR_PROCEDURE()
+            , ERROR_MESSAGE()
+            , GETDATE()
+        );
+
+        SET @outResultCode = 50000; -- error inesperado
+
+    END CATCH;
+
+    SET NOCOUNT OFF;
 END;
 GO

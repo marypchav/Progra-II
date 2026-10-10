@@ -1,168 +1,337 @@
-CREATE OR ALTER   PROCEDURE [dbo].[spAgregarBeneficiario]
-    @IdUsuario          INT -- quién agrega. sirve para verificar el acceso la bitácora
-    , @IdCuenta         INT -- a qué cuenta se agrega el beneficiario
-    , @IP               VARCHAR(64) -- ip del cliente, para la bitácora
-    , @IdTipoDocuIdentidad INT -- tipo de documento
-    , @ValorDocumento   VARCHAR(32) -- número de documento
-    , @Nombre           VARCHAR(64) -- nombre del beneficiario
-    , @FechaNacimiento  DATE -- fecha de nacimiento
-    , @Email            VARCHAR(64) -- email
-    , @Telefono1        VARCHAR(64) -- teléfono 1
-    , @Telefono2        VARCHAR(64) -- teléfono 2
-    , @IdParentesco     INT -- parentesco
-    , @Porcentaje       INT -- porcentaje
-    , @OutResultCode    INT OUTPUT -- parámetro de salida: 0 = éxito, otro número = error
+CREATE OR ALTER PROCEDURE dbo.spAgregarBeneficiario
+    @inIdUsuario INT -- quién agrega, para el acceso y la bitácora
+    , @inIdCuenta INT -- a qué cuenta se agrega el beneficiario
+    , @inIP VARCHAR(64) -- ip del cliente, para la bitácora
+    , @inIdTipoDocuIdentidad INT -- tipo de documento
+    , @inValorDocumento VARCHAR(32) -- número de documento (solo dígitos)
+    , @inNombre VARCHAR(64) -- nombre del beneficiario
+    , @inFechaNacimiento DATE -- fecha de nacimiento
+    , @inEmail VARCHAR(64) -- email
+    , @inTelefono1 VARCHAR(64) -- teléfono 1
+    , @inTelefono2 VARCHAR(64) -- teléfono 2
+    , @inIdParentesco INT -- parentesco con el dueño de la cuenta
+    , @inPorcentaje INT -- porcentaje de beneficio (1 a 100)
+    , @outResultCode INT OUTPUT -- 0 = éxito, otro número = código de error
 AS
+/*
+Ejemplo de ejecución:
+    DECLARE @resultado INT;
+
+    EXEC dbo.spAgregarBeneficiario
+        @inIdUsuario = 1
+        , @inIdCuenta = 1
+        , @inIP = '127.0.0.1'
+        , @inIdTipoDocuIdentidad = 1
+        , @inValorDocumento = '204560789'
+        , @inNombre = 'Maria Mora Solis'
+        , @inFechaNacimiento = '1990-05-20'
+        , @inEmail = 'maria@gmail.com'
+        , @inTelefono1 = '88112233'
+        , @inTelefono2 = '24197545'
+        , @inIdParentesco = 2
+        , @inPorcentaje = 20
+        , @outResultCode = @resultado OUTPUT;
+
+    SELECT @resultado AS ResultCode;
+*/
 BEGIN
     SET NOCOUNT ON; -- evita mensajes de "N filas afectadas"
-    SET @OutResultCode = 0; -- se asume éxito
+
     BEGIN TRY
 
-        -- acceso
-        -- primero se valida que la cuenta exista
+        -- constantes
+        DECLARE @true BIT = 1
+            , @false BIT = 0
+            , @tipoOperacionAgregar INT = 3 -- TipoOperacion "Agregar beneficiario"
+            , @maxBeneficiarios INT = 3 -- máximo de beneficiarios activos
+            , @fechaMinima DATE = '1900-01-01'; -- fecha de nacimiento más antigua aceptada
 
-        IF NOT EXISTS (SELECT 1 FROM dbo.Cuenta WHERE IdCuenta = @IdCuenta)
-        BEGIN SET @OutResultCode = 50014; RETURN; END
+        -- variables de uso general
+        DECLARE @esAdministrador BIT
+            , @valorDocumento VARCHAR(32)
+            , @nombre VARCHAR(64)
+            , @fechaNacimiento DATE
+            , @email VARCHAR(64)
+            , @telefono1 VARCHAR(64)
+            , @telefono2 VARCHAR(64);
 
-        -- luego que el usuario sea administrador o tenga esa cuenta en UsuarioPuedeVer
+        -- inicializaciones
+        SET @outResultCode = 0; -- se asume éxito
+        SET @esAdministrador = @false;
 
-        IF NOT EXISTS (SELECT 1 FROM dbo.Usuario AS U
-                       WHERE U.IdUsuario = @IdUsuario
-                         AND (U.EsAdministrador = 1
-                              OR EXISTS (SELECT 1 FROM dbo.UsuarioPuedeVer V
-                                         WHERE V.IdUsuario = U.IdUsuario AND V.IdCuenta = @IdCuenta)))
-        BEGIN SET @OutResultCode = 50002; RETURN; END
+        -- se limpian espacios al inicio y al final; ISNULL convierte un NULL en
+        -- texto vacío para que las validaciones de abajo lo detecten
+        SET @valorDocumento = LTRIM(RTRIM(ISNULL(@inValorDocumento, '')));
+        SET @nombre = LTRIM(RTRIM(ISNULL(@inNombre, '')));
+        SET @fechaNacimiento = @inFechaNacimiento;
+        SET @email = LTRIM(RTRIM(ISNULL(@inEmail, '')));
+        SET @telefono1 = LTRIM(RTRIM(ISNULL(@inTelefono1, '')));
+        SET @telefono2 = LTRIM(RTRIM(ISNULL(@inTelefono2, '')));
 
-        -- validación de campos
-        -- primero se limpian los espacios al inicio y al final; ISNULL convierte un NULL en texto vacío para que las validaciones de abajo lo detecten.
+        -- validaciones de acceso
+        -- la cuenta debe existir
+        IF NOT EXISTS (
+            SELECT 1
+            FROM dbo.Cuenta AS C
+            WHERE (C.IdCuenta = @inIdCuenta)
+        )
+        BEGIN
+            SET @outResultCode = 50014; -- cuenta no existe
+            RETURN;
+        END;
 
-        SET @Nombre = LTRIM(RTRIM(ISNULL(@Nombre, '')));
-        SET @ValorDocumento = LTRIM(RTRIM(ISNULL(@ValorDocumento, '')));
-        SET @Email = LTRIM(RTRIM(ISNULL(@Email, '')));
-        SET @Telefono1 = LTRIM(RTRIM(ISNULL(@Telefono1, '')));
-        SET @Telefono2 = LTRIM(RTRIM(ISNULL(@Telefono2, '')));
+        -- el usuario debe ser administrador o tener la cuenta en UsuarioPuedeVer
+        SELECT @esAdministrador = U.EsAdministrador
+        FROM dbo.Usuario AS U
+        WHERE (U.IdUsuario = @inIdUsuario);
 
-        -- validación de nombre obligatorio
+        IF (@esAdministrador = @false)
+            AND NOT EXISTS (
+                SELECT 1
+                FROM dbo.UsuarioPuedeVer AS UPV
+                WHERE (UPV.IdUsuario = @inIdUsuario)
+                    AND (UPV.IdCuenta = @inIdCuenta)
+            )
+        BEGIN
+            SET @outResultCode = 50002; -- sin acceso a la cuenta
+            RETURN;
+        END;
 
-        IF @Nombre = ''
-        BEGIN SET @OutResultCode = 50004; RETURN; END
+        -- validaciones de campos
+        -- nombre obligatorio
+        IF (@nombre = '')
+        BEGIN
+            SET @outResultCode = 50004;
+            RETURN;
+        END;
 
-        -- documento obligatorio y solo con dígitos 
+        -- documento obligatorio y solo con dígitos
+        IF (@valorDocumento = '')
+            OR (@valorDocumento LIKE '%[^0-9]%')
+        BEGIN
+            SET @outResultCode = 50005;
+            RETURN;
+        END;
 
-        IF @ValorDocumento = '' OR @ValorDocumento LIKE '%[^0-9]%'
-        BEGIN SET @OutResultCode = 50005; RETURN; END
+        -- porcentaje entero entre 1 y 100
+        IF (@inPorcentaje IS NULL)
+            OR (@inPorcentaje NOT BETWEEN 1 AND 100)
+        BEGIN
+            SET @outResultCode = 50006;
+            RETURN;
+        END;
 
-        -- porcentaje entero entre 1 y 100 
+        -- el parentesco debe existir en el catálogo
+        IF NOT EXISTS (
+            SELECT 1
+            FROM dbo.Parentesco AS PA
+            WHERE (PA.IdParentesco = @inIdParentesco)
+        )
+        BEGIN
+            SET @outResultCode = 50007;
+            RETURN;
+        END;
 
-        IF @Porcentaje IS NULL OR @Porcentaje NOT BETWEEN 1 AND 100
-        BEGIN SET @OutResultCode = 50006; RETURN; END
+        -- el tipo de documento debe existir en el catálogo
+        IF NOT EXISTS (
+            SELECT 1
+            FROM dbo.TipoDocuIdentidad AS TDI
+            WHERE (TDI.IdTipoDocuIdentidad = @inIdTipoDocuIdentidad)
+        )
+        BEGIN
+            SET @outResultCode = 50008;
+            RETURN;
+        END;
 
-        -- el parentesco debe existir en el catálogo (es una llave foránea)
+        -- fecha de nacimiento: obligatoria, no futura y no anterior a 1900
+        IF (@fechaNacimiento IS NULL)
+            OR (@fechaNacimiento > CAST(GETDATE() AS DATE))
+            OR (@fechaNacimiento < @fechaMinima)
+        BEGIN
+            SET @outResultCode = 50009;
+            RETURN;
+        END;
 
-        IF NOT EXISTS (SELECT 1 FROM dbo.Parentesco WHERE IdParentesco = @IdParentesco)
-        BEGIN SET @OutResultCode = 50007; RETURN; END
-
-        -- el tipo de documento debe existir en el catálogo (también es llave foránea)
-
-        IF NOT EXISTS (SELECT 1 FROM dbo.TipoDocuIdentidad WHERE IdTipoDocuIdentidad = @IdTipoDocuIdentidad)
-        BEGIN SET @OutResultCode = 50008; RETURN; END
-
-        -- validar que la fecha de nacimiento no esté vacía, no sea futura y tampoco super antigua
-
-        IF @FechaNacimiento IS NULL OR @FechaNacimiento > CAST(GETDATE() AS DATE)
-           OR @FechaNacimiento < '1900-01-01'
-        BEGIN SET @OutResultCode = 50009; RETURN; END
-
-        -- email con formato básico de blabla@blabla.blabla y sin espacios
-
-        IF @Email NOT LIKE '%_@_%._%' OR @Email LIKE '% %'
-        BEGIN SET @OutResultCode = 50010; RETURN; END
+        -- email con formato básico algo@algo.algo y sin espacios
+        IF (@email NOT LIKE '%_@_%._%')
+            OR (@email LIKE '% %')
+        BEGIN
+            SET @outResultCode = 50010;
+            RETURN;
+        END;
 
         -- teléfonos obligatorios y solo con dígitos
-
-        IF @Telefono1 = '' OR @Telefono1 LIKE '%[^0-9]%'
-           OR @Telefono2 = '' OR @Telefono2 LIKE '%[^0-9]%'
-        BEGIN SET @OutResultCode = 50011; RETURN; END
-
-        -- máximo 3 beneficiarios activos por cuenta. los eliminados (FlagActivo = 0) no cuentan, así que al eliminar uno se libera un espacio
-
-        IF (SELECT COUNT(*) FROM dbo.Beneficiario
-            WHERE IdCuenta = @IdCuenta AND FlagActivo = 1) >= 3
-        BEGIN SET @OutResultCode = 50003; RETURN; END
-
-        -- desde aquí se modifican datos, así que se abre una transacción en donde o se guardan TODOS los cambios (persona, beneficiario y bitácora) o ninguno
-
-        BEGIN TRANSACTION;
-
-        -- reutiliza la persona si ya existe
-
-        DECLARE @IdPersona INT;
-        SELECT @IdPersona = IdPersona
-        FROM dbo.Persona
-        WHERE ValorDocumentoIdentidad = @ValorDocumento;
-
-        -- si la persona no existe, se crea con los datos recibidos
-
-        IF @IdPersona IS NULL
+        IF (@telefono1 = '')
+            OR (@telefono1 LIKE '%[^0-9]%')
+            OR (@telefono2 = '')
+            OR (@telefono2 LIKE '%[^0-9]%')
         BEGIN
-            INSERT dbo.Persona
-                (IdTipoDocuIdentidad, ValorDocumentoIdentidad, Nombre,
-                 FechaNacimiento, Email, Telefono1, Telefono2)
-            VALUES
-                (@IdTipoDocuIdentidad, @ValorDocumento, @Nombre,
-                 @FechaNacimiento, @Email, @Telefono1, @Telefono2);
-            SET @IdPersona = SCOPE_IDENTITY(); -- toma el id que la base acaba de generar
-        END
-
-        -- no repetir un beneficiario activo en la misma cuenta
-
-        IF EXISTS (SELECT 1 FROM dbo.Beneficiario
-                   WHERE IdCuenta = @IdCuenta
-                     AND IdPersonaBeneficiario = @IdPersona AND FlagActivo = 1)
-        BEGIN
-            ROLLBACK TRANSACTION;
-            SET @OutResultCode = 50012;
+            SET @outResultCode = 50011;
             RETURN;
-        END
+        END;
 
-        -- actualiza la relación cuenta-beneficiario con el parentesco y porcentaje
+        -- la persona no puede ser ya beneficiario activo de la misma cuenta.
+        -- va antes del máximo de 3 porque es el mensaje más preciso para el usuario
+        IF EXISTS (
+            SELECT 1
+            FROM dbo.Beneficiario AS B
+            INNER JOIN dbo.Persona AS P
+                ON (P.IdPersona = B.IdPersonaBeneficiario)
+            WHERE (B.IdCuenta = @inIdCuenta)
+                AND (P.ValorDocumentoIdentidad = @valorDocumento)
+                AND (B.FlagActivo = @true)
+        )
+        BEGIN
+            SET @outResultCode = 50012;
+            RETURN;
+        END;
 
-        INSERT dbo.Beneficiario (IdCuenta, IdPersonaBeneficiario, IdParentesco, Porcentaje)
-        VALUES (@IdCuenta, @IdPersona, @IdParentesco, @Porcentaje);
+        -- máximo 3 beneficiarios activos por cuenta. los eliminados
+        -- (FlagActivo = 0) no cuentan, así que eliminar uno libera un espacio
+        IF (
+            SELECT COUNT(1)
+            FROM dbo.Beneficiario AS B
+            WHERE (B.IdCuenta = @inIdCuenta)
+                AND (B.FlagActivo = @true)
+        ) >= @maxBeneficiarios
+        BEGIN
+            SET @outResultCode = 50003;
+            RETURN;
+        END;
 
-        -- id del beneficiario recién creado, para armar el JSON de la bitácora
+        -- variables para el preprocesamiento y la transacción
+        DECLARE @existePersona BIT
+            , @numeroCuenta VARCHAR(20)
+            , @nombreParentesco VARCHAR(32)
+            , @jsonDespues NVARCHAR(MAX);
 
-        DECLARE @IdBeneficiario INT = SCOPE_IDENTITY();
+        -- preprocesamiento
+        SET @existePersona = @false;
 
-        -- JSON con el estado después de agregar
+        -- si la persona ya existe se reutiliza y se usan sus datos guardados
+        -- (los campos comunes de una persona existen una sola vez)
+        SELECT @existePersona = @true
+            , @nombre = P.Nombre
+            , @fechaNacimiento = P.FechaNacimiento
+            , @email = P.Email
+            , @telefono1 = P.Telefono1
+            , @telefono2 = P.Telefono2
+        FROM dbo.Persona AS P
+        WHERE (P.ValorDocumentoIdentidad = @valorDocumento);
 
-        DECLARE @JsonDespues NVARCHAR(MAX) =
-        (SELECT B.IdBeneficiario, C.NumeroCuenta, P.ValorDocumentoIdentidad, P.Nombre
-              , PA.Nombre AS Parentesco, B.Porcentaje, P.FechaNacimiento
-              , P.Email, P.Telefono1, P.Telefono2, B.FlagActivo
-         FROM dbo.Beneficiario AS B
-         JOIN dbo.Cuenta     AS C  ON C.IdCuenta = B.IdCuenta
-         JOIN dbo.Persona    AS P  ON P.IdPersona = B.IdPersonaBeneficiario
-         JOIN dbo.Parentesco AS PA ON PA.IdParentesco = B.IdParentesco
-         WHERE B.IdBeneficiario = @IdBeneficiario
-         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+        SELECT @numeroCuenta = C.NumeroCuenta
+        FROM dbo.Cuenta AS C
+        WHERE (C.IdCuenta = @inIdCuenta);
 
-        -- registra en la bitácora (IdTipoOperacion 3 = Agregar beneficiario). DatosAntes queda en NULL porque antes de agregar no existía nada
+        SELECT @nombreParentesco = PA.Nombre
+        FROM dbo.Parentesco AS PA
+        WHERE (PA.IdParentesco = @inIdParentesco);
 
-        INSERT dbo.Bitacora (IdUsuario, IdTipoOperacion, IP, DatosAntes, DatosDespues)
-        VALUES (@IdUsuario, 3, @IP, NULL, @JsonDespues);
+        -- JSON con el estado después de agregar (antes no existía nada)
+        SET @jsonDespues = (
+            SELECT @numeroCuenta AS NumeroCuenta
+                , @valorDocumento AS ValorDocumentoIdentidad
+                , @nombre AS Nombre
+                , @nombreParentesco AS Parentesco
+                , @inPorcentaje AS Porcentaje
+                , @fechaNacimiento AS FechaNacimiento
+                , @email AS Email
+                , @telefono1 AS Telefono1
+                , @telefono2 AS Telefono2
+                , @true AS FlagActivo
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
 
-        -- se confirman los cambios de forma definitiva
+        -- transacción: se guardan todos los cambios (persona, beneficiario y
+        -- bitácora) o ninguno. Sin IF: el filtro del WHERE decide si se inserta
+        BEGIN TRANSACTION tAgregarBeneficiario;
 
-        COMMIT TRANSACTION;
+            -- la persona se inserta solo si no existía
+            INSERT INTO dbo.Persona (
+                IdTipoDocuIdentidad
+                , ValorDocumentoIdentidad
+                , Nombre
+                , FechaNacimiento
+                , Email
+                , Telefono1
+                , Telefono2
+            )
+            SELECT @inIdTipoDocuIdentidad
+                , @valorDocumento
+                , @nombre
+                , @fechaNacimiento
+                , @email
+                , @telefono1
+                , @telefono2
+            WHERE (@existePersona = @false);
+
+            -- relación cuenta-beneficiario; la persona se obtiene por su documento
+            INSERT INTO dbo.Beneficiario (
+                IdCuenta
+                , IdPersonaBeneficiario
+                , IdParentesco
+                , Porcentaje
+            )
+            SELECT @inIdCuenta
+                , P.IdPersona
+                , @inIdParentesco
+                , @inPorcentaje
+            FROM dbo.Persona AS P
+            WHERE (P.ValorDocumentoIdentidad = @valorDocumento);
+
+            -- bitácora: DatosAntes en NULL porque antes no existía
+            INSERT INTO dbo.Bitacora (
+                IdUsuario
+                , IdTipoOperacion
+                , IP
+                , DatosAntes
+                , DatosDespues
+            )
+            VALUES (
+                @inIdUsuario
+                , @tipoOperacionAgregar
+                , @inIP
+                , NULL
+                , @jsonDespues
+            );
+
+        COMMIT TRANSACTION tAgregarBeneficiario;
+
     END TRY
     BEGIN CATCH
 
-        -- cualquier error inesperado cae aquí
+        -- si quedó una transacción abierta, se deshace
+        IF (@@TRANCOUNT > 0)
+        BEGIN
+            ROLLBACK TRANSACTION;
+        END;
 
-        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
-        SET @OutResultCode = 50000;
-        SELECT ERROR_MESSAGE() AS MensajeError; -- devuelve el texto del error para depurar
-    END CATCH
+        -- registra el error en la tabla de errores
+        INSERT INTO dbo.dbError (
+            UserName
+            , ErrorNumber
+            , ErrorState
+            , ErrorSeverity
+            , ErrorLine
+            , ErrorProcedure
+            , ErrorMessage
+            , ErrorDateTime
+        )
+        VALUES (
+            SUSER_SNAME()
+            , ERROR_NUMBER()
+            , ERROR_STATE()
+            , ERROR_SEVERITY()
+            , ERROR_LINE()
+            , ERROR_PROCEDURE()
+            , ERROR_MESSAGE()
+            , GETDATE()
+        );
+
+        SET @outResultCode = 50000; -- error inesperado
+
+    END CATCH;
+
+    SET NOCOUNT OFF;
 END;
 GO

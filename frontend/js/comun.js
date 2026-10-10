@@ -1,4 +1,4 @@
-// comun.js: funciones compartidas por todas las pantallas. Se carga DESPUES de api.js.
+// comun.js: funciones compartidas por todas las pantallas. Se carga DESPUÉS de api.js.
 // api.js ya define: Api, escapar, dinero, fechaLarga, fechaISO y TEXTO_ALERTA (no se repiten aquí).
 
 const $ = (id) => document.getElementById(id);
@@ -38,7 +38,20 @@ function pintarIconos(raiz) {
   });
 }
 
-// ---------- sesión y cuenta elegida ----------
+// ---------- utilidades ----------
+function esAdmin(usuario) {
+  return !!usuario && (usuario.EsAdministrador === true || usuario.EsAdministrador === 1);
+}
+
+function iniciales(texto) {
+  const partes = String(texto || '').trim().split(/\s+/).filter(Boolean);
+  if (!partes.length) return '?';
+  const a = partes[0][0];
+  const b = partes[1] ? partes[1][0] : (partes[0][1] || '');
+  return (a + b).toUpperCase();
+}
+
+// ---------- cuenta elegida ----------
 // la sesión real vive en el servidor (cookie). Aquí solo se recuerda qué cuenta eligió el usuario.
 const CLAVE_CUENTA = 'cuentaSel';
 
@@ -52,18 +65,85 @@ function cuentaGuardada() {
   return Number.isInteger(n) && n > 0 ? n : null;
 }
 
-function esAdmin(usuario) {
-  return !!(usuario && usuario.EsAdministrador);
+// ---------- mensaje que sobrevive a un cambio de pantalla ----------
+function flash(texto, tipo) {
+  sessionStorage.setItem('flash', JSON.stringify({ texto, tipo: tipo || 'ok' }));
 }
 
-function iniciales(texto) {
-  const partes = String(texto || '?').trim().split(/\s+/);
-  const a = partes[0][0] || '?';
-  const b = partes[1] ? partes[1][0] : (partes[0][1] || '');
-  return (a + b).toUpperCase();
+function mostrarFlash() {
+  const f = sessionStorage.getItem('flash');
+  if (!f) return;
+  sessionStorage.removeItem('flash');
+  const { texto, tipo } = JSON.parse(f);
+  toast(texto, tipo);
 }
 
+// ---------- avisos y confirmaciones ----------
+// mensaje flotante abajo a la derecha. tipo: 'ok' | 'error' | 'aviso'
+function toast(texto, tipo) {
+  tipo = tipo || 'ok';
+  let caja = $('toasts');
+  if (!caja) {
+    caja = document.createElement('div');
+    caja.id = 'toasts';
+    caja.className = 'toasts';
+    caja.setAttribute('role', 'status');
+    caja.setAttribute('aria-live', 'polite');
+    document.body.appendChild(caja);
+  }
+  const icos = { ok: 'check', error: 'xcircle', aviso: 'alert' };
+  const t = document.createElement('div');
+  t.className = 'toast ' + tipo;
+  t.innerHTML = icono(icos[tipo] || 'info') + `<span>${escapar(texto)}</span>`;
+  caja.appendChild(t);
+  setTimeout(() => {
+    t.classList.add('sale');
+    setTimeout(() => t.remove(), 300);
+  }, 4000);
+}
+
+// ventana de confirmación. devuelve una promesa: true si aceptó, false si canceló o cerró con Esc
+// opciones: { titulo, mensaje, detalle, textoAceptar, textoCancelar, peligro, tipo: 'aviso' }
+function confirmar(opc) {
+  const o = Object.assign({
+    titulo: 'Confirmar', mensaje: '', detalle: '', textoAceptar: 'Aceptar',
+    textoCancelar: 'Cancelar', peligro: false, tipo: ''
+  }, opc);
+  const claseCab = o.peligro ? 'peligro' : o.tipo;
+  return new Promise((resolver) => {
+    const d = document.createElement('dialog');
+    d.className = 'modal';
+    d.innerHTML = `
+      <div class="modal-cab ${claseCab}">
+        <span class="modal-ico">${icono(o.peligro || o.tipo === 'aviso' ? 'alert' : 'info')}</span>
+        <h3>${escapar(o.titulo)}</h3>
+      </div>
+      <div class="modal-cuerpo">
+        <p>${escapar(o.mensaje)}</p>
+        ${o.detalle ? `<p class="modal-detalle">${escapar(o.detalle)}</p>` : ''}
+      </div>
+      <div class="modal-pie">
+        <button type="button" class="btn secundario" data-r="0">${escapar(o.textoCancelar)}</button>
+        <button type="button" class="btn ${o.peligro ? 'peligro-fuerte' : 'primario'}" data-r="1">${escapar(o.textoAceptar)}</button>
+      </div>`;
+    document.body.appendChild(d);
+    let acepto = false;
+    d.addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-r]');
+      if (b) { acepto = b.dataset.r === '1'; d.close(); }
+    });
+    d.addEventListener('close', () => { d.remove(); resolver(acepto); });
+    d.showModal();
+  });
+}
+
+// ---------- cerrar sesión ----------
 async function salir() {
+  const si = await confirmar({
+    tipo: 'aviso', titulo: 'Cerrar sesión', mensaje: '¿Desea cerrar su sesión?',
+    textoAceptar: 'Cerrar sesión', textoCancelar: 'Quedarme'
+  });
+  if (!si) return;
   try { await Api.logout(); } catch (e) { /* aunque falle el servidor, se sale de la pantalla */ }
   sessionStorage.removeItem(CLAVE_CUENTA);
   window.location.href = 'index.html?m=salio';
@@ -73,22 +153,22 @@ async function salir() {
 function pintarNavbar(pagina, usuario) {
   const nav = $('navbar');
   if (!nav) return;
-  const enlace = (id, href, ico, texto) =>
-    `<a class="nav-link${pagina === id ? ' activo' : ''}" href="${href}">${icono(ico)}<span>${texto}</span></a>`;
   const admin = esAdmin(usuario);
+  const enlace = (id, href, ico, texto) =>
+    `<a class="nav-link${pagina === id ? ' activo' : ''}" href="${href}" ${pagina === id ? 'aria-current="page"' : ''}>${icono(ico)}<span>${texto}</span></a>`;
   nav.innerHTML = `
     <div class="nav-in">
-      <a class="marca" href="inicio.html"><span class="marca-logo">${icono('shield')}</span> Mi Ahorro</a>
-      <nav class="nav-links">
+      <a class="marca" href="inicio.html"><span class="marca-logo">${icono('shield')}</span><span>Mi Ahorro</span></a>
+      <nav class="nav-links" aria-label="Secciones">
         ${enlace('inicio', 'inicio.html', 'home', 'Inicio')}
         ${enlace('beneficiarios', 'beneficiarios.html', 'users', 'Beneficiarios')}
         ${enlace('estados', 'estados.html', 'file', 'Estados de cuenta')}
       </nav>
       <div class="nav-user">
         <span class="rol ${admin ? 'admin' : 'cliente'}">${admin ? 'Administrador' : 'Cliente'}</span>
-        <span class="avatar">${escapar(iniciales(usuario.UserName))}</span>
+        <span class="avatar" aria-hidden="true">${escapar(iniciales(usuario.UserName))}</span>
         <span class="nav-nombre">${escapar(usuario.UserName)}</span>
-        <button id="btnSalir" class="btn-salir" type="button">${icono('logout')}<span>Salir</span></button>
+        <button id="btnSalir" class="btn-salir" type="button" title="Cerrar sesión">${icono('logout')}<span>Salir</span></button>
       </div>
     </div>`;
   $('btnSalir').addEventListener('click', salir);
@@ -107,10 +187,10 @@ function pintarContexto(cuenta) {
       <span class="ctx-ico">${icono('card')}</span>
       <div class="ctx-datos">
         <strong>Cuenta ${escapar(cuenta.NumeroCuenta)}</strong>
-        <span>${escapar(cuenta.NombreDueno)} · ${escapar(cuenta.TipoCuenta)}</span>
+        <span>${escapar(cuenta.TipoCuenta)} · Dueño: ${escapar(cuenta.NombreDueno)}</span>
       </div>
-      <a class="ctx-cambiar" href="inicio.html">Cambiar de cuenta</a>
       <div class="ctx-saldo"><span>Saldo</span><strong>${escapar(dinero(cuenta.Saldo, cuenta.Simbolo))}</strong></div>
+      <a class="ctx-cambiar" href="inicio.html">Cambiar cuenta</a>
     </div>`;
   nav.insertAdjacentElement('afterend', ctx);
 }
@@ -120,6 +200,7 @@ function pintarContexto(cuenta) {
 // requiereCuenta: true si la pantalla necesita una cuenta elegida (si no hay, vuelve a inicio)
 // devuelve { usuario, cuentas, cuenta } o null si ya redirigió
 async function arrancar(pagina, requiereCuenta) {
+  pintarIconos();
   let r = null;
   try { r = await Api.sesion(); } catch (e) { r = null; }
 
@@ -130,72 +211,22 @@ async function arrancar(pagina, requiereCuenta) {
 
   const usuario = r.usuario;
   const cuentas = r.cuentas || [];
-  let cuenta = null;
 
-  if (requiereCuenta) {
-    cuenta = cuentas.find((c) => c.IdCuenta === cuentaGuardada()) || null;
-    if (!cuenta) {
-      window.location.href = 'inicio.html';
-      return null;
-    }
+  // si el usuario solo tiene una cuenta, se elige sola
+  let cuenta = cuentas.find((c) => c.IdCuenta === cuentaGuardada()) || null;
+  if (!cuenta && cuentas.length === 1) {
+    cuenta = cuentas[0];
+    elegirCuenta(cuenta.IdCuenta);
+  }
+
+  if (requiereCuenta && !cuenta) {
+    flash('Elija primero una cuenta.', 'aviso');
+    window.location.href = 'inicio.html';
+    return null;
   }
 
   pintarNavbar(pagina, usuario);
-  if (cuenta) pintarContexto(cuenta);
-  pintarIconos();
+  if (requiereCuenta) pintarContexto(cuenta);
+  mostrarFlash();
   return { usuario, cuentas, cuenta };
-}
-
-// ---------- avisos y confirmaciones ----------
-// mensaje flotante abajo a la derecha. tipo: 'ok' | 'error' | 'aviso'
-function toast(texto, tipo) {
-  tipo = tipo || 'ok';
-  let caja = $('toasts');
-  if (!caja) {
-    caja = document.createElement('div');
-    caja.id = 'toasts';
-    caja.className = 'toasts';
-    caja.setAttribute('aria-live', 'polite');
-    document.body.appendChild(caja);
-  }
-  const icos = { ok: 'check', error: 'xcircle', aviso: 'alert' };
-  const t = document.createElement('div');
-  t.className = 'toast ' + tipo;
-  t.innerHTML = icono(icos[tipo] || 'info') + `<span>${escapar(texto)}</span>`;
-  caja.appendChild(t);
-  setTimeout(() => {
-    t.classList.add('sale');
-    setTimeout(() => t.remove(), 300);
-  }, 4000);
-}
-
-// ventana de confirmación. devuelve una promesa: true si aceptó, false si canceló o cerró con Esc
-// ej: if (await confirmar({ titulo: 'Eliminar', mensaje: '¿Seguro?', peligro: true })) { ... }
-function confirmar(opc) {
-  const o = Object.assign({ titulo: 'Confirmar', mensaje: '', detalle: '', textoAceptar: 'Aceptar', peligro: false }, opc);
-  return new Promise((resolver) => {
-    const d = document.createElement('dialog');
-    d.className = 'modal';
-    d.innerHTML = `
-      <div class="modal-cab ${o.peligro ? 'peligro' : ''}">
-        <span class="modal-ico">${icono(o.peligro ? 'alert' : 'info')}</span>
-        <h3>${escapar(o.titulo)}</h3>
-      </div>
-      <div class="modal-cuerpo">
-        <p>${escapar(o.mensaje)}</p>
-        ${o.detalle ? `<p class="modal-detalle">${escapar(o.detalle)}</p>` : ''}
-      </div>
-      <div class="modal-pie">
-        <button type="button" class="btn secundario" data-r="0">Cancelar</button>
-        <button type="button" class="btn ${o.peligro ? 'peligro-fuerte' : 'primario'}" data-r="1">${escapar(o.textoAceptar)}</button>
-      </div>`;
-    document.body.appendChild(d);
-    let acepto = false;
-    d.addEventListener('click', (e) => {
-      const b = e.target.closest('button[data-r]');
-      if (b) { acepto = b.dataset.r === '1'; d.close(); }
-    });
-    d.addEventListener('close', () => { d.remove(); resolver(acepto); });
-    d.showModal();
-  });
 }

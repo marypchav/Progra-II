@@ -1,45 +1,100 @@
-CREATE OR ALTER   PROCEDURE [dbo].[spLogin]
-    @UserName      VARCHAR(64) -- usuario que intenta ingresar
-    , @Pass        VARCHAR(64) -- password que escribió
-    , @IP          VARCHAR(64) -- ip del cliente, para la bitácora
-    , @OutResultCode INT OUTPUT -- parámetro de salida: 0 = éxito, otro número = error
-AS
+CREATE OR ALTER PROCEDURE dbo.spLogin
+    @inUserName VARCHAR(64) -- usuario que intenta ingresar
+    , @inPass VARCHAR(64) -- password que escribió
+    , @inIP VARCHAR(64) -- ip del cliente, para la bitácora
+    , @outResultCode INT OUTPUT -- 0 = éxito, otro número = código de error
+AS 
+/*
+Ejemplo de ejecución:
+    DECLARE @resultado INT;
+
+    EXEC dbo.spLogin
+        @inUserName = 'jaguero'
+        , @inPass = 'LaFacil'
+        , @inIP = '127.0.0.1'
+        , @outResultCode = @resultado OUTPUT;
+
+    SELECT @resultado AS ResultCode;
+*/
 BEGIN
     SET NOCOUNT ON; -- evita mensajes de "N filas afectadas"
-    SET @OutResultCode = 0; -- se asume éxito
+
     BEGIN TRY
-        DECLARE @IdUsuario INT; -- queda en NULL si no hay coincidencia
 
-        -- busca un usuario con ese nombre Y ese password
+        -- constantes
+        DECLARE @tipoOperacionLogin INT = 1; -- TipoOperacion "Login" del catálogo
 
-        SELECT @IdUsuario = U.IdUsuario
+        -- variables de uso general
+        DECLARE @idUsuario INT; -- queda en NULL si no hay coincidencia
+
+        -- inicializaciones
+        SET @outResultCode = 0; -- se asume éxito
+        SET @idUsuario = NULL;
+
+        -- validaciones
+        -- busca un usuario con ese nombre y ese password.
+        -- COLLATE hace la comparación del password sensible a mayúsculas y minúsculas
+        SELECT @idUsuario = U.IdUsuario
         FROM dbo.Usuario AS U
-        WHERE U.UserName = @UserName
-          AND U.Pass = @Pass COLLATE Latin1_General_CS_AS; -- hace la comparación del password sensible a mayúsculas y minúsculas
+        WHERE (U.UserName = @inUserName)
+            AND (U.Pass = @inPass COLLATE Latin1_General_CS_AS);
 
-        -- si no se encontró, las credenciales son incorrectas
-
-        IF @IdUsuario IS NULL
+        IF (@idUsuario IS NULL)
         BEGIN
-            SET @OutResultCode = 50001;
+            SET @outResultCode = 50001; -- credenciales incorrectas
             RETURN;
-        END
-
-        -- registra el login exitoso en la bitácora (IdTipoOperacion 1 = Login).
-
-        INSERT dbo.Bitacora (IdUsuario, IdTipoOperacion, IP)
-        VALUES (@IdUsuario, 1, @IP);
+        END;
 
         -- devuelve los datos del usuario, sin el password
-
-        SELECT U.IdUsuario, U.UserName, U.EsAdministrador, U.IdPersona
+        SELECT U.IdUsuario
+            , U.UserName
+            , U.EsAdministrador
+            , U.IdPersona
         FROM dbo.Usuario AS U
-        WHERE U.IdUsuario = @IdUsuario;
+        WHERE (U.IdUsuario = @idUsuario);
+
+        -- actualización: registra el login exitoso en la bitácora.
+        -- DatosAntes y DatosDespues quedan en NULL porque un login no modifica datos
+        INSERT INTO dbo.Bitacora (
+            IdUsuario
+            , IdTipoOperacion
+            , IP
+        )
+        VALUES (
+            @idUsuario
+            , @tipoOperacionLogin
+            , @inIP
+        );
+
     END TRY
     BEGIN CATCH
 
-        SET @OutResultCode = 50000;
-        SELECT ERROR_MESSAGE() AS MensajeError;
-    END CATCH
+        -- registra el error en la tabla de errores
+        INSERT INTO dbo.dbError (
+            UserName
+            , ErrorNumber
+            , ErrorState
+            , ErrorSeverity
+            , ErrorLine
+            , ErrorProcedure
+            , ErrorMessage
+            , ErrorDateTime
+        )
+        VALUES (
+            SUSER_SNAME()
+            , ERROR_NUMBER()
+            , ERROR_STATE()
+            , ERROR_SEVERITY()
+            , ERROR_LINE()
+            , ERROR_PROCEDURE()
+            , ERROR_MESSAGE()
+            , GETDATE()
+        );
+
+        SET @outResultCode = 50000; -- error inesperado
+
+    END CATCH;
+
+    SET NOCOUNT OFF;
 END;
 GO
