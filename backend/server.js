@@ -67,8 +67,8 @@ async function cerrarConexion() {
     }
 }
 
-// función genérica para ejecutar un SP.
-// entradas: [{ nombre, tipo, valor }], el nombre va SIN la @ (ej. 'inIdUsuario').
+// función para ejecutar un SP.
+// entradas: [{ nombre, tipo, valor }], el nombre va sin la @ (ej. 'inIdUsuario').
 // todos los SP tienen el parámetro de salida @outResultCode.
 async function ejecutarSP(nombreSP, entradas = []) {
     const p = await obtenerPool();

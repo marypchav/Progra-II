@@ -16,9 +16,6 @@ const motivo = new URLSearchParams(location.search).get('m');
 if (motivo === 'salio') mostrarAviso('Sesión cerrada correctamente. Ingrese de nuevo cuando lo necesite.', 'ok');
 if (motivo === 'expirada') mostrarAviso('Su sesión terminó o aún no ha ingresado. Ingrese con su usuario y password.', 'aviso-amarillo');
 
-// guía de usuarios de prueba (solo con datos simulados)
-if (USAR_DATOS_SIMULADOS) $('demo').hidden = false;
-
 $('verClave').addEventListener('click', () => {
   const oculto = $('pass').type === 'password';
   $('pass').type = oculto ? 'text' : 'password';
@@ -63,3 +60,4 @@ form.addEventListener('submit', async (e) => {
   btn.disabled = false;
   btn.textContent = 'Ingresar';
 });
+

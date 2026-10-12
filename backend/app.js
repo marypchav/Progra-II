@@ -1,7 +1,7 @@
 // backend/app.js: servidor web (Express). Es el puente entre el navegador y backend/server.js.
-//  - sirve los archivos de /frontend (html, css, js)
-//  - expone la API (/api/...) que usa frontend/js/api.js (ApiReal)
-//  - guarda la sesión en el servidor: el navegador solo recibe una cookie
+// sirve los archivos de /frontend (html, css, js)
+// expone la API que usa frontend/js/api.js (ApiReal)
+// guarda la sesión en el servidor: el navegador solo recibe una cookie
 require('dotenv').config();
 const path = require('path');
 const express = require('express');
@@ -14,17 +14,17 @@ const PUERTO = process.env.PORT || 3000;
 app.use(express.json()); // para leer el JSON que manda api.js en POST y PUT
 
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'cambie-esto-en-el-env',
+    secret: process.env.SESSION_SECRET || 'cualquier-cosa',
     resave: false,
     saveUninitialized: false, // no crea cookie hasta que haya login
     cookie: { httpOnly: true, sameSite: 'lax', maxAge: 30 * 60 * 1000 } // 30 min
 }));
 
-// el frontend se sirve desde el mismo servidor, así que no hay problemas de CORS
-// y la cookie de sesión viaja sola (api.js usa credentials: 'same-origin')
+// el frontend se sirve desde el mismo servidor
+// y la cookie de sesión viaja sola
 app.use(express.static(path.join(__dirname, '..', 'frontend')));
 
-// ---------- utilidades ----------
+// usos
 
 const fallo = (mensaje) => ({ exito: false, mensaje });
 
@@ -61,7 +61,7 @@ function datosBeneficiario(b = {}) {
     };
 }
 
-// middleware: corta la petición si no hay sesión
+// corta la petición si no hay sesión
 function exigirSesion(req, res, next) {
     if (!req.session.usuario) return res.status(401).json(fallo('Debe iniciar sesión primero'));
     next();
@@ -74,7 +74,7 @@ const ruta = (fn) => (req, res) =>
         res.status(500).json(fallo('Error en el servidor. Revise la consola del backend.'));
     });
 
-// ---------- sesión ----------
+// sesión
 
 app.post('/api/login', ruta(async (req, res) => {
     const { userName, pass } = req.body || {};
@@ -104,17 +104,14 @@ app.get('/api/sesion', exigirSesion, ruta(async (req, res) => {
     res.json({ exito: true, mensaje: 'Sesión activa', usuario: req.session.usuario, cuentas: c.datos });
 }));
 
-// ---------- catálogos ----------
+// catálogos
 
 app.get('/api/catalogos', exigirSesion, ruta(async (req, res) => {
     const r = await db.obtenerCatalogosBeneficiario();
     res.json({ exito: true, mensaje: r.mensaje, parentescos: r.parentescos, tiposDocumento: r.tiposDocumento });
 }));
 
-// ---------- beneficiarios ----------
-// OJO: el IdUsuario sale SIEMPRE de la sesión, nunca del cuerpo de la petición.
-// Si saliera del navegador, cualquiera podría hacerse pasar por otro usuario.
-
+// beneficiarios
 app.get('/api/cuentas/:idCuenta/beneficiarios', exigirSesion, ruta(async (req, res) => {
     const idCuenta = idDe(req.params.idCuenta);
     if (!idCuenta) return res.json(fallo('Cuenta inválida'));
@@ -157,7 +154,7 @@ app.delete('/api/beneficiarios/:id', exigirSesion, ruta(async (req, res) => {
     res.json({ exito: r.exito, mensaje: r.mensaje });
 }));
 
-// ---------- estados de cuenta ----------
+// estados de cuenta
 
 app.get('/api/cuentas/:idCuenta/estados', exigirSesion, ruta(async (req, res) => {
     const idCuenta = idDe(req.params.idCuenta);
@@ -169,7 +166,7 @@ app.get('/api/cuentas/:idCuenta/estados', exigirSesion, ruta(async (req, res) =>
 // cualquier otra ruta /api responde JSON (y no una página html de error)
 app.use('/api', (req, res) => res.status(404).json(fallo('Ruta no encontrada')));
 
-// ---------- arranque ----------
+// arranque
 
 app.listen(PUERTO, () => {
     console.log(`Servidor listo en http://localhost:${PUERTO}`);
