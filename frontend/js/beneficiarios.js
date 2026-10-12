@@ -9,7 +9,7 @@
   let lista = [];
   let cat = { parentescos: [], tiposDocumento: [] };
 
-  // ---------- carga ----------
+ // carga
   async function cargar() {
     let r;
     try { r = await Api.beneficiarios(cuenta.IdCuenta); } catch (e) { r = null; }
@@ -27,7 +27,7 @@
     $('btnAgregar').title = lista.length >= MAX ? 'Ya tiene 3 beneficiarios. Elimine uno para agregar otro.' : '';
   }
 
-  // ---------- alerta (requisito: rótulo llamativo) ----------
+  // alerta
   function pintarAlerta(a) {
     const mostrar = a && a.mostrarAlerta;
     $('alertaSuma').hidden = !mostrar;
@@ -37,7 +37,7 @@
     }
   }
 
-  // ---------- barra de distribución ----------
+  // barra de distribución 
   function pintarDistribucion(a) {
     const suma = a ? a.suma : 0;
     if (!lista.length) { $('distribucion').innerHTML = ''; return; }
@@ -54,7 +54,7 @@
       </div>`;
   }
 
-  // ---------- tabla ----------
+  // tabla
   function pintarTabla() {
     if (!lista.length) {
       contenido.innerHTML = `<div class="estado-vacio"><span class="estado-ico">${icono('users')}</span>
@@ -89,7 +89,7 @@
   });
   $('btnAgregar').addEventListener('click', () => abrirFormulario(null));
 
-  // ---------- eliminar ----------
+  // eliminar
   async function eliminar(b) {
     if (!b) return;
     const si = await confirmar({
@@ -104,7 +104,7 @@
     if (r.exito) cargar();
   }
 
-  // ---------- formulario (agregar / editar) ----------
+  // formulario (agregar/editar) 
   function opciones(arr, idCampo, sel) {
     return arr.map(o => `<option value="${o[idCampo]}" ${o[idCampo] === sel ? 'selected' : ''}>${escapar(o.Nombre)}</option>`).join('');
   }
@@ -157,7 +157,7 @@
     document.body.appendChild(d);
     const q = (id) => d.querySelector('#' + id);
 
-    // suma de los OTROS beneficiarios + el porcentaje que se escribe
+    // suma de los otros beneficiarios + el porcentaje que se escribe
     const otros = lista.filter(x => !b || x.IdBeneficiario !== b.IdBeneficiario).reduce((s, x) => s + x.Porcentaje, 0);
     function actualizarSuma() {
       const nuevo = Number(q('fPct').value) || 0;
@@ -199,7 +199,7 @@
         telefono2: q('fTel2').value.trim()
       };
 
-      // validación en el navegador (el SP vuelve a validar todo)
+      // validación en el navegador (igual el SP vuelve a validar todo)
       const msg = validar(datos, !edita);
       if (msg) return error(msg);
 
@@ -237,7 +237,7 @@
     return null;
   }
 
-  // ---------- arranque ----------
+  // arranque
   try {
     const c = await Api.catalogos();
     if (c.exito) cat = { parentescos: c.parentescos, tiposDocumento: c.tiposDocumento };
