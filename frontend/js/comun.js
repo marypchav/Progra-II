@@ -1,9 +1,9 @@
-// comun.js: funciones compartidas por todas las pantallas. Se carga DESPUÉS de api.js.
+// comun.js: funciones compartidas por todas las pantallas. Se carga después de api.js.
 // api.js ya define: Api, escapar, dinero, fechaLarga, fechaISO y TEXTO_ALERTA (no se repiten aquí).
 
 const $ = (id) => document.getElementById(id);
 
-// ---------- iconos (estilo línea, 24x24) ----------
+// iconos (estilo línea, 24x24)
 // cada valor es el contenido interno del <svg>; icono() lo envuelve
 const ICONOS = {
   shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
@@ -38,7 +38,7 @@ function pintarIconos(raiz) {
   });
 }
 
-// ---------- utilidades ----------
+// utilidades
 function esAdmin(usuario) {
   return !!usuario && (usuario.EsAdministrador === true || usuario.EsAdministrador === 1);
 }
@@ -51,7 +51,7 @@ function iniciales(texto) {
   return (a + b).toUpperCase();
 }
 
-// ---------- cuenta elegida ----------
+// cuenta elegida
 // la sesión real vive en el servidor (cookie). Aquí solo se recuerda qué cuenta eligió el usuario.
 const CLAVE_CUENTA = 'cuentaSel';
 
@@ -65,7 +65,7 @@ function cuentaGuardada() {
   return Number.isInteger(n) && n > 0 ? n : null;
 }
 
-// ---------- mensaje que sobrevive a un cambio de pantalla ----------
+// mensaje que sobrevive a un cambio de pantalla
 function flash(texto, tipo) {
   sessionStorage.setItem('flash', JSON.stringify({ texto, tipo: tipo || 'ok' }));
 }
@@ -78,8 +78,8 @@ function mostrarFlash() {
   toast(texto, tipo);
 }
 
-// ---------- avisos y confirmaciones ----------
-// mensaje flotante abajo a la derecha. tipo: 'ok' | 'error' | 'aviso'
+// avisos y confirmaciones
+// mensaje flotante abajo a la derecha. tipo: 'ok' - 'error' - 'aviso'
 function toast(texto, tipo) {
   tipo = tipo || 'ok';
   let caja = $('toasts');
@@ -137,7 +137,7 @@ function confirmar(opc) {
   });
 }
 
-// ---------- cerrar sesión ----------
+// cerrar sesión
 async function salir() {
   const si = await confirmar({
     tipo: 'aviso', titulo: 'Cerrar sesión', mensaje: '¿Desea cerrar su sesión?',
@@ -149,7 +149,7 @@ async function salir() {
   window.location.href = 'index.html?m=salio';
 }
 
-// ---------- barra de navegación y contexto de cuenta ----------
+// barra de navegación y contexto de cuenta
 function pintarNavbar(pagina, usuario) {
   const nav = $('navbar');
   if (!nav) return;
@@ -195,10 +195,7 @@ function pintarContexto(cuenta) {
   nav.insertAdjacentElement('afterend', ctx);
 }
 
-// ---------- arranque de cada pantalla ----------
-// pagina: 'inicio' | 'beneficiarios' | 'estados' (resalta el enlace de la barra)
-// requiereCuenta: true si la pantalla necesita una cuenta elegida (si no hay, vuelve a inicio)
-// devuelve { usuario, cuentas, cuenta } o null si ya redirigió
+// arranque de cada pantalla
 async function arrancar(pagina, requiereCuenta) {
   pintarIconos();
   let r = null;

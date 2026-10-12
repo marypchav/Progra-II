@@ -1,4 +1,4 @@
-// inicio.js: elegir cuenta. El cliente ve sus cuentas; el administrador ve todas, con buscador.
+// inicio.js: elegir cuenta. El cliente ve sus cuentas y el administrador ve todas, con buscador.
 (async () => {
   const ctx = await arrancar('inicio', false);
   if (!ctx) return;
@@ -20,7 +20,7 @@
   }
 
   // Estado de los porcentajes por cuenta (se revisan hasta 12 cuentas)
-  const estado = {}; // IdCuenta -> { suma, mostrarAlerta }
+  const estado = {}; // IdCuenta: { suma, mostrarAlerta }
   await Promise.allSettled(cuentas.slice(0, 12).map(async (c) => {
     const r = await Api.beneficiarios(c.IdCuenta);
     if (r.exito && r.alerta) estado[c.IdCuenta] = r.alerta;

@@ -56,5 +56,4 @@
       </tr>`).join('')}</tbody></table></div>
     <p class="nota-pie">${icono('info')} El detalle de movimientos de cada estado estará disponible en una fase posterior.</p>`;
 
-  // Para esta fase, al dar clic en una fila no pasa nada (TP3 mostrará los movimientos).
 })();
