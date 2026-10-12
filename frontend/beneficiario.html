@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Beneficiario | Mi Ahorro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header id="navbar" class="navbar"></header>
+  <div id="ctx" class="ctx"></div>
+
+  <main class="contenedor angosto">
+    <nav class="migas" aria-label="Ubicación">
+      <a href="beneficiarios.html">Beneficiarios</a> <span>/</span> <span id="migaActual">Agregar</span>
+    </nav>
+
+    <section class="tarjeta">
+      <header class="tarjeta-cab">
+        <span class="cab-ico" id="icoCab"></span>
+        <h1 id="tituloForm">Insertar beneficiario</h1>
+      </header>
+
+      <div id="cargandoForm" class="cargando">Cargando formulario...</div>
+
+      <form id="formBenef" class="tarjeta-cuerpo" novalidate hidden>
+        <div id="avisoForm" class="aviso error" role="alert" hidden></div>
+        <div id="notaDoc" class="aviso info">
+          <span data-ico="info"></span>
+          <span>Si el documento ya está registrado, se usarán los datos existentes de esa persona.</span>
+        </div>
+        <div id="notaEditar" class="aviso info" hidden>
+          <span data-ico="lock"></span>
+          <span>El tipo y el número de documento no se pueden cambiar.</span>
+        </div>
+
+        <div class="campo" id="cNombre">
+          <label for="fNombre">Nombre completo</label>
+          <input id="fNombre" maxlength="64" autocomplete="off" placeholder="Ej: Juan Perez Mora">
+          <p class="error-txt"></p>
+        </div>
+
+        <div class="grid-2">
+          <div class="campo" id="cParentesco">
+            <label for="fParentesco">Parentesco</label>
+            <select id="fParentesco"></select>
+            <p class="error-txt"></p>
+          </div>
+          <div class="campo" id="cPorcentaje">
+            <label for="fPorcentaje">Porcentaje de beneficio (1 a 100)</label>
+            <input id="fPorcentaje" type="number" min="1" max="100" step="1" inputmode="numeric" placeholder="Ej: 50">
+            <p class="error-txt"></p>
+          </div>
+        </div>
+
+        <!-- Suma de porcentajes en vivo + alerta -->
+        <div id="panelSuma" class="panel-suma" aria-live="polite">
+          <div class="panel-suma-cab"><span>Suma de porcentajes de la cuenta</span><span id="sumaTotal">0%</span></div>
+          <div id="barraSuma" class="barra-dist"></div>
+          <div id="leyendaSuma" class="leyenda"></div>
+          <div id="alertaForm" class="alerta-suma compacta" role="alert" hidden>
+            <span class="alerta-ico" data-ico="alert"></span>
+            <div><strong>¡Atención!</strong><div class="alerta-texto" id="alertaFormTexto"></div></div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="campo" id="cTipoDoc">
+            <label for="fTipoDoc">Tipo de documento de identificación</label>
+            <select id="fTipoDoc"></select>
+            <p class="error-txt"></p>
+          </div>
+          <div class="campo" id="cDoc">
+            <label for="fDoc">Número de documento</label>
+            <input id="fDoc" maxlength="32" inputmode="numeric" autocomplete="off" placeholder="Ej: 117370445">
+            <p class="error-txt"></p>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="campo" id="cFecha">
+            <label for="fFecha">Fecha de nacimiento</label>
+            <input id="fFecha" type="date" min="1900-01-01">
+            <p class="error-txt"></p>
+          </div>
+          <div class="campo" id="cEmail">
+            <label for="fEmail">Email</label>
+            <input id="fEmail" type="email" maxlength="64" autocomplete="off" placeholder="Ej: nombre@correo.com">
+            <p class="error-txt"></p>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="campo" id="cTel1">
+            <label for="fTel1">Teléfono 1</label>
+            <input id="fTel1" maxlength="64" inputmode="numeric" autocomplete="off" placeholder="Ej: 85343403">
+            <p class="error-txt"></p>
+          </div>
+          <div class="campo" id="cTel2">
+            <label for="fTel2">Teléfono 2</label>
+            <input id="fTel2" maxlength="64" inputmode="numeric" autocomplete="off" placeholder="Ej: 24197636">
+            <p class="error-txt"></p>
+          </div>
+        </div>
+
+        <div class="fila-botones">
+          <button id="btnGuardar" type="submit" class="btn primario">Guardar</button>
+          <button id="btnRegresar" type="button" class="btn secundario">Regresar</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/comun.js"></script>
+  <script src="js/beneficiario.js"></script>
+</body>
+</html>
