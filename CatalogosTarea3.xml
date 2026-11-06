@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Catálogos - Tercera Tarea Programada - Bases de Datos I.
+     Las llaves se insertan tal cual vienen (no son identity). -->
+<Catalogos>
+  <Tipo_Doc>
+    <TipoDocuIdentidad Id="1" Nombre="Cedula Nacional"/>
+    <TipoDocuIdentidad Id="2" Nombre="Cedula Residente"/>
+    <TipoDocuIdentidad Id="3" Nombre="Pasaporte"/>
+    <TipoDocuIdentidad Id="4" Nombre="Cedula Juridica"/>
+    <TipoDocuIdentidad Id="5" Nombre="Permiso de Trabajo"/>
+    <TipoDocuIdentidad Id="6" Nombre="Cedula Extranjera"/>
+  </Tipo_Doc>
+  <Tipo_Moneda>
+    <TipoMoneda Id="1" Nombre="Colones" Simbolo="₡"/>
+    <TipoMoneda Id="2" Nombre="Dolares" Simbolo="$"/>
+    <TipoMoneda Id="3" Nombre="Euros" Simbolo="€"/>
+  </Tipo_Moneda>
+  <Parentezcos>
+    <Parentezco Id="1" Nombre="Padre"/>
+    <Parentezco Id="2" Nombre="Madre"/>
+    <Parentezco Id="3" Nombre="Hijo"/>
+    <Parentezco Id="4" Nombre="Hija"/>
+    <Parentezco Id="5" Nombre="Hermano"/>
+    <Parentezco Id="6" Nombre="Hermana"/>
+    <Parentezco Id="7" Nombre="amigo"/>
+    <Parentezco Id="8" Nombre="amiga"/>
+  </Parentezcos>
+  <!-- Montos en la moneda del tipo de cuenta. TasaInteresAnual en porcentaje; se aplica /12 al cierre.
+       NumRetiros*: máximo de operaciones por periodo sin comisión. MontoMaxSinpeDiario: suma de
+       envíos Sinpe en un día sin comisión; ComisionSinpe se cobra por cada envío que lo supere. -->
+  <Tipo_Cuenta_Ahorros>
+    <TipoCuentaAhorro Id="1" Nombre="Proletario" IdTipoMoneda="1" SaldoMinimo="25000.00" MultaSaldoMin="3000.00" CargoMensual="5000.00" NumRetirosHumano="5" NumRetirosAutomatico="8" ComisionHumano="300.00" ComisionAutomatico="300.00" MontoMaxSinpeDiario="100000.00" ComisionSinpe="500.00" TasaInteresAnual="10"/>
+    <TipoCuentaAhorro Id="2" Nombre="Profesional" IdTipoMoneda="1" SaldoMinimo="50000.00" MultaSaldoMin="3000.00" CargoMensual="15000.00" NumRetirosHumano="5" NumRetirosAutomatico="8" ComisionHumano="500.00" ComisionAutomatico="500.00" MontoMaxSinpeDiario="200000.00" ComisionSinpe="750.00" TasaInteresAnual="15"/>
+    <TipoCuentaAhorro Id="3" Nombre="Exclusivo" IdTipoMoneda="1" SaldoMinimo="100000.00" MultaSaldoMin="3000.00" CargoMensual="30000.00" NumRetirosHumano="5" NumRetirosAutomatico="8" ComisionHumano="1000.00" ComisionAutomatico="1000.00" MontoMaxSinpeDiario="500000.00" ComisionSinpe="1000.00" TasaInteresAnual="20"/>
+    <TipoCuentaAhorro Id="4" Nombre="Ahorro Dolares" IdTipoMoneda="2" SaldoMinimo="100.00" MultaSaldoMin="5.00" CargoMensual="10.00" NumRetirosHumano="5" NumRetirosAutomatico="8" ComisionHumano="1.00" ComisionAutomatico="1.00" MontoMaxSinpeDiario="400.00" ComisionSinpe="1.00" TasaInteresAnual="3"/>
+  </Tipo_Cuenta_Ahorros>
+  <!-- Accion: Credito suma al saldo, Debito resta. flagGeneraComprobante=1 envía comprobante al email del dueño. -->
+  <Tipos_Movimiento>
+    <TipoMovimiento Id="1" Nombre="Deposito Ventana" Accion="Credito" flagGeneraComprobante="1"/>
+    <TipoMovimiento Id="2" Nombre="Deposito ATM" Accion="Credito" flagGeneraComprobante="1"/>
+    <TipoMovimiento Id="3" Nombre="Compra" Accion="Debito" flagGeneraComprobante="1"/>
+    <TipoMovimiento Id="4" Nombre="Retiro ATM" Accion="Debito" flagGeneraComprobante="1"/>
+    <TipoMovimiento Id="5" Nombre="Retiro Ventana" Accion="Debito" flagGeneraComprobante="1"/>
+    <TipoMovimiento Id="6" Nombre="Comision Exceso Ventana" Accion="Debito" flagGeneraComprobante="0"/>
+    <TipoMovimiento Id="7" Nombre="Comision Exceso ATM" Accion="Debito" flagGeneraComprobante="0"/>
+    <TipoMovimiento Id="8" Nombre="Deposito Sinpe" Accion="Credito" flagGeneraComprobante="1"/>
+    <TipoMovimiento Id="9" Nombre="Retiro Sinpe" Accion="Debito" flagGeneraComprobante="1"/>
+    <TipoMovimiento Id="10" Nombre="Comision Sinpe" Accion="Debito" flagGeneraComprobante="0"/>
+    <TipoMovimiento Id="11" Nombre="Cargo Servicio Mensual" Accion="Debito" flagGeneraComprobante="0"/>
+    <TipoMovimiento Id="12" Nombre="Intereses Mensuales" Accion="Credito" flagGeneraComprobante="0"/>
+    <TipoMovimiento Id="13" Nombre="Aplicacion Subcuenta Objetivo" Accion="Debito" flagGeneraComprobante="0"/>
+    <TipoMovimiento Id="14" Nombre="Redencion Subcuenta Objetivo" Accion="Credito" flagGeneraComprobante="0"/>
+    <TipoMovimiento Id="15" Nombre="Redencion Intereses Subcuenta Objetivo" Accion="Credito" flagGeneraComprobante="0"/>
+    <TipoMovimiento Id="16" Nombre="Multa Saldo Minimo" Accion="Debito" flagGeneraComprobante="0"/>
+    <TipoMovimiento Id="17" Nombre="Debito por Ajuste" Accion="Debito" flagGeneraComprobante="0"/>
+    <TipoMovimiento Id="18" Nombre="Credito por Ajuste" Accion="Credito" flagGeneraComprobante="0"/>
+  </Tipos_Movimiento>
+  <TipoOperacionesBitacora>
+    <TipoOperacion Id="1" Nombre="Login"/>
+    <TipoOperacion Id="2" Nombre="Logout"/>
+    <TipoOperacion Id="3" Nombre="Agregar beneficiario"/>
+    <TipoOperacion Id="4" Nombre="Actualizar beneficiario"/>
+    <TipoOperacion Id="5" Nombre="Eliminar beneficiario"/>
+    <TipoOperacion Id="6" Nombre="Actualizar porcentaje de beneficiario"/>
+    <TipoOperacion Id="7" Nombre="Consultar estado de cuenta"/>
+    <TipoOperacion Id="8" Nombre="Consultar movimientos de estado de cuenta"/>
+  </TipoOperacionesBitacora>
+</Catalogos>

@@ -24,7 +24,7 @@ BEGIN
         -- preprocesamiento: lee el archivo como binario (SINGLE_BLOB) y lo
         -- convierte a XML, respetando el UTF-8 declarado (para ₡ y €)
         SELECT @datos = X.BulkColumn
-        FROM OPENROWSET(BULK 'C:\Temp\catalogos.xml', SINGLE_BLOB) AS X;
+        FROM OPENROWSET(BULK 'C:\Temp\CatalogosTarea3.xml', SINGLE_BLOB) AS X;
 
         -- transacción: si una carga falla, no queda nada a medias
         BEGIN TRANSACTION tCargarCatalogo;
@@ -59,7 +59,8 @@ BEGIN
             FROM @datos.nodes('/Catalogos/Parentezcos/Parentezco') AS T(Nodo);
 
             -- tipos de cuenta de ahorro: los atributos del XML se mapean a las
-            -- columnas de la tabla
+            -- columnas de la tabla. en la tarea 3 cambian los nombres de varios
+            -- atributos y se agregan los del límite sinpe
             INSERT INTO dbo.TipoCuentaAhorro (
                 IdTipoCuentaAhorro
                 , Nombre
@@ -71,6 +72,8 @@ BEGIN
                 , MaxOperAutomaticoGratis
                 , ComisionHumanoExceso
                 , ComisionAutomaticoExceso
+                , MaxDiarioSinpeSinComision
+                , ComisionSinpeExceso
                 , TasaInteresAnual
             )
             SELECT T.Nodo.value('@Id', 'INT')
@@ -78,21 +81,36 @@ BEGIN
                 , T.Nodo.value('@IdTipoMoneda', 'INT')
                 , T.Nodo.value('@SaldoMinimo', 'MONEY')
                 , T.Nodo.value('@MultaSaldoMin', 'MONEY')
-                , T.Nodo.value('@CargoAnual', 'MONEY')
+                , T.Nodo.value('@CargoMensual', 'MONEY')
                 , T.Nodo.value('@NumRetirosHumano', 'INT')
                 , T.Nodo.value('@NumRetirosAutomatico', 'INT')
-                , T.Nodo.value('@comisionHumano', 'MONEY')
-                , T.Nodo.value('@comisionAutomatico', 'MONEY')
-                , T.Nodo.value('@interes', 'DECIMAL(5,2)')
+                , T.Nodo.value('@ComisionHumano', 'MONEY')
+                , T.Nodo.value('@ComisionAutomatico', 'MONEY')
+                , T.Nodo.value('@MontoMaxSinpeDiario', 'MONEY')
+                , T.Nodo.value('@ComisionSinpe', 'MONEY')
+                , T.Nodo.value('@TasaInteresAnual', 'DECIMAL(5,2)')
             FROM @datos.nodes('/Catalogos/Tipo_Cuenta_Ahorros/TipoCuentaAhorro') AS T(Nodo);
 
-            -- tipos de operación de la bitácora
+            -- tipos de movimiento (nuevo en la tarea 3)
+            INSERT INTO dbo.TipoMovimiento (
+                IdTipoMovimiento
+                , Nombre
+                , Accion
+                , FlagGeneraComprobante
+            )
+            SELECT T.Nodo.value('@Id', 'INT')
+                , T.Nodo.value('@Nombre', 'VARCHAR(64)')
+                , T.Nodo.value('@Accion', 'VARCHAR(16)')
+                , T.Nodo.value('@flagGeneraComprobante', 'BIT')
+            FROM @datos.nodes('/Catalogos/Tipos_Movimiento/TipoMovimiento') AS T(Nodo);
+
+            -- tipos de operación de la bitácora (en la tarea 3 vienen con mayúscula)
             INSERT INTO dbo.TipoOperacion (
                 IdTipoOperacion
                 , Nombre
             )
-            SELECT T.Nodo.value('@id', 'INT')
-                , T.Nodo.value('@nombre', 'VARCHAR(64)')
+            SELECT T.Nodo.value('@Id', 'INT')
+                , T.Nodo.value('@Nombre', 'VARCHAR(64)')
             FROM @datos.nodes('/Catalogos/TipoOperacionesBitacora/TipoOperacion') AS T(Nodo);
 
         COMMIT TRANSACTION tCargarCatalogo;

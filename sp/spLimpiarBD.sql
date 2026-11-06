@@ -11,9 +11,6 @@ Ejemplo de ejecución (recarga completa):
     EXEC dbo.spCargarCatalogo
         @outResultCode = @resultado OUTPUT;
 
-    EXEC dbo.spCargarEntidad
-        @outResultCode = @resultado OUTPUT;
-
     SELECT @resultado AS ResultCode;
 */
 BEGIN
@@ -29,6 +26,10 @@ BEGIN
 
             -- se borra en orden inverso a las llaves foráneas:
             -- primero las tablas hijas y al final las referenciadas (padres)
+            DELETE FROM dbo.Comprobante; -- depende de Movimiento
+            DELETE FROM dbo.Movimiento; -- depende de Cuenta, EstadoCuenta, TipoMovimiento y OperacionXML
+            DELETE FROM dbo.ControlSimulacion;
+            DELETE FROM dbo.OperacionXML;
             DELETE FROM dbo.Bitacora; -- depende de Usuario y TipoOperacion
             DELETE FROM dbo.UsuarioPuedeVer; -- depende de Usuario y Cuenta
             DELETE FROM dbo.EstadoCuenta; -- depende de Cuenta
@@ -38,21 +39,38 @@ BEGIN
             DELETE FROM dbo.Persona; -- depende de TipoDocuIdentidad
 
             -- catálogos, también de hijas a padres
-            DELETE FROM dbo.TipoCuentaAhorro;   -- depende de TipoMoneda
+            DELETE FROM dbo.TipoCuentaAhorro; -- depende de TipoMoneda
+            DELETE FROM dbo.TipoMovimiento;
             DELETE FROM dbo.TipoOperacion;
             DELETE FROM dbo.TipoMoneda;
             DELETE FROM dbo.Parentesco;
             DELETE FROM dbo.TipoDocuIdentidad;
 
-            -- reinicia los IDENTITY de las tablas no-catálogo para que los ids
-            -- vuelvan a empezar en 1 (los catálogos no son IDENTITY)
-            DBCC CHECKIDENT ('dbo.Bitacora', RESEED, 0) WITH NO_INFOMSGS;
-            DBCC CHECKIDENT ('dbo.UsuarioPuedeVer', RESEED, 0) WITH NO_INFOMSGS;
-            DBCC CHECKIDENT ('dbo.EstadoCuenta', RESEED, 0) WITH NO_INFOMSGS;
-            DBCC CHECKIDENT ('dbo.Beneficiario', RESEED, 0) WITH NO_INFOMSGS;
-            DBCC CHECKIDENT ('dbo.Cuenta', RESEED, 0) WITH NO_INFOMSGS;
-            DBCC CHECKIDENT ('dbo.Usuario', RESEED, 0) WITH NO_INFOMSGS;
-            DBCC CHECKIDENT ('dbo.Persona', RESEED, 0) WITH NO_INFOMSGS;
+            -- reinicia los IDENTITY para que los ids vuelvan a empezar en 1.
+            -- solo se reinician las tablas que ya tuvieron filas: en una tabla
+            -- recién creada, RESEED 0 haría que el primer id fuera 0
+            IF EXISTS (SELECT 1 FROM sys.identity_columns AS IC WHERE (IC.object_id = OBJECT_ID('dbo.Comprobante')) AND (IC.last_value IS NOT NULL))
+                DBCC CHECKIDENT ('dbo.Comprobante', RESEED, 0) WITH NO_INFOMSGS;
+            IF EXISTS (SELECT 1 FROM sys.identity_columns AS IC WHERE (IC.object_id = OBJECT_ID('dbo.Movimiento')) AND (IC.last_value IS NOT NULL))
+                DBCC CHECKIDENT ('dbo.Movimiento', RESEED, 0) WITH NO_INFOMSGS;
+            IF EXISTS (SELECT 1 FROM sys.identity_columns AS IC WHERE (IC.object_id = OBJECT_ID('dbo.ControlSimulacion')) AND (IC.last_value IS NOT NULL))
+                DBCC CHECKIDENT ('dbo.ControlSimulacion', RESEED, 0) WITH NO_INFOMSGS;
+            IF EXISTS (SELECT 1 FROM sys.identity_columns AS IC WHERE (IC.object_id = OBJECT_ID('dbo.OperacionXML')) AND (IC.last_value IS NOT NULL))
+                DBCC CHECKIDENT ('dbo.OperacionXML', RESEED, 0) WITH NO_INFOMSGS;
+            IF EXISTS (SELECT 1 FROM sys.identity_columns AS IC WHERE (IC.object_id = OBJECT_ID('dbo.Bitacora')) AND (IC.last_value IS NOT NULL))
+                DBCC CHECKIDENT ('dbo.Bitacora', RESEED, 0) WITH NO_INFOMSGS;
+            IF EXISTS (SELECT 1 FROM sys.identity_columns AS IC WHERE (IC.object_id = OBJECT_ID('dbo.UsuarioPuedeVer')) AND (IC.last_value IS NOT NULL))
+                DBCC CHECKIDENT ('dbo.UsuarioPuedeVer', RESEED, 0) WITH NO_INFOMSGS;
+            IF EXISTS (SELECT 1 FROM sys.identity_columns AS IC WHERE (IC.object_id = OBJECT_ID('dbo.EstadoCuenta')) AND (IC.last_value IS NOT NULL))
+                DBCC CHECKIDENT ('dbo.EstadoCuenta', RESEED, 0) WITH NO_INFOMSGS;
+            IF EXISTS (SELECT 1 FROM sys.identity_columns AS IC WHERE (IC.object_id = OBJECT_ID('dbo.Beneficiario')) AND (IC.last_value IS NOT NULL))
+                DBCC CHECKIDENT ('dbo.Beneficiario', RESEED, 0) WITH NO_INFOMSGS;
+            IF EXISTS (SELECT 1 FROM sys.identity_columns AS IC WHERE (IC.object_id = OBJECT_ID('dbo.Cuenta')) AND (IC.last_value IS NOT NULL))
+                DBCC CHECKIDENT ('dbo.Cuenta', RESEED, 0) WITH NO_INFOMSGS;
+            IF EXISTS (SELECT 1 FROM sys.identity_columns AS IC WHERE (IC.object_id = OBJECT_ID('dbo.Usuario')) AND (IC.last_value IS NOT NULL))
+                DBCC CHECKIDENT ('dbo.Usuario', RESEED, 0) WITH NO_INFOMSGS;
+            IF EXISTS (SELECT 1 FROM sys.identity_columns AS IC WHERE (IC.object_id = OBJECT_ID('dbo.Persona')) AND (IC.last_value IS NOT NULL))
+                DBCC CHECKIDENT ('dbo.Persona', RESEED, 0) WITH NO_INFOMSGS;
 
         COMMIT TRANSACTION tLimpiarBD;
 
