@@ -27,7 +27,8 @@ const SP = {
     AGREGAR_BENEFICIARIO: 'dbo.spAgregarBeneficiario',
     ACTUALIZAR_BENEFICIARIO: 'dbo.spActualizarBeneficiario',
     ELIMINAR_BENEFICIARIO: 'dbo.spEliminarBeneficiario',
-    ESTADOS_CUENTA: 'dbo.spConsultarEstadoCuenta'
+    ESTADOS_CUENTA: 'dbo.spConsultarEstadoCuenta',
+    MOVIMIENTOS_ESTADO: 'dbo.spConsultarMovimientosEstado'
 };
 
 // mensajes para los códigos de error que devuelven los SP en @outResultCode
@@ -47,7 +48,8 @@ const MENSAJES_ERROR = {
     50011: 'El teléfono es inválido (solo números)',
     50012: 'Esa persona ya es beneficiario activo de la cuenta',
     50013: 'El beneficiario no existe o ya fue eliminado',
-    50014: 'La cuenta no existe'
+    50014: 'La cuenta no existe',
+    50015: 'El estado de cuenta no existe'
 };
 
 // conexión con solo un pool para todo el programa
@@ -195,6 +197,18 @@ async function consultarEstadosCuenta(idUsuario, idCuenta, ip) {
     ]);
 }
 
+// este SP devuelve 2 resultados: el estado de cuenta (una fila) y sus movimientos
+async function consultarMovimientosEstado(idUsuario, idEstadoCuenta, ip) {
+    const r = await ejecutarSP(SP.MOVIMIENTOS_ESTADO, [
+        { nombre: 'inIdUsuario', tipo: sql.Int, valor: idUsuario },
+        { nombre: 'inIdEstadoCuenta', tipo: sql.Int, valor: idEstadoCuenta },
+        { nombre: 'inIP', tipo: sql.VarChar(64), valor: ip }
+    ]);
+    r.estado = r.exito ? ((r.recordsets[0] || [])[0] || null) : null;
+    r.movimientos = r.exito ? (r.recordsets[1] || []) : [];
+    return r;
+}
+
 function convertirFecha(texto) {
     if (!texto) return null;
     const f = new Date(texto);
@@ -212,5 +226,6 @@ module.exports = {
     actualizarBeneficiario,
     eliminarBeneficiario,
     consultarEstadosCuenta,
+    consultarMovimientosEstado,
     cerrarConexion
 };
