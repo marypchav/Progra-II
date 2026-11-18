@@ -17,17 +17,35 @@
       <a href="inicio.html">Inicio</a><span>/</span><span>Estados de cuenta</span>
     </nav>
 
-    <section class="tarjeta">
+    <!-- Listado de estados de cuenta (del más reciente al más antiguo) -->
+    <section class="tarjeta" id="seccionEstados">
       <header class="tarjeta-cab">
         <span class="cab-ico" data-ico="file"></span>
         <div>
           <h2>Estados de cuenta</h2>
-          <p class="sub">Los últimos 8 estados, del más reciente al más antiguo.</p>
+          <p class="sub">Ordenados del más reciente al más antiguo. Seleccione un estado para consultar su detalle y movimientos.</p>
         </div>
       </header>
       <div class="tarjeta-cuerpo">
         <div id="contenido"><div class="cargando">Cargando estados de cuenta...</div></div>
       </div>
+    </section>
+
+    <!-- Consulta del estado de cuenta seleccionado y detalle cronológico de movimientos -->
+    <section class="tarjeta" id="seccionDetalle" hidden>
+      <header class="tarjeta-cab">
+        <span class="cab-ico" data-ico="activity"></span>
+        <div>
+          <h2 id="detalleTitulo">Consulta de estado de cuenta</h2>
+          <p class="sub" id="detalleSub">Resumen del período y detalle de movimientos en orden cronológico.</p>
+        </div>
+        <div class="cab-der">
+          <button id="btnCerrarDetalle" class="btn blanco chico" type="button">
+            <span data-ico="x"></span> Cerrar detalle
+          </button>
+        </div>
+      </header>
+      <div class="tarjeta-cuerpo" id="contenidoDetalle"></div>
     </section>
   </main>
 

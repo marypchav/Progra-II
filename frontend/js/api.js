@@ -24,7 +24,8 @@ const Api = {
   agregar: (idCuenta, d) => http('POST', `/api/cuentas/${idCuenta}/beneficiarios`, d),
   editar: (id, d) => http('PUT', `/api/beneficiarios/${id}`, d),
   eliminar: (id) => http('DELETE', `/api/beneficiarios/${id}`),
-  estados: (idCuenta) => http('GET', `/api/cuentas/${idCuenta}/estados`)
+  estados: (idCuenta) => http('GET', `/api/cuentas/${idCuenta}/estados`),
+  movimientos: (idEstado) => http('GET', `/api/estados/${idEstado}/movimientos`)
 };
 
 // utilidades de formato (compartidas) 

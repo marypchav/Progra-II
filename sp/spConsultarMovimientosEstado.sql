@@ -1,6 +1,6 @@
-CREATE OR ALTER PROCEDURE dbo.spConsultarEstadoCuenta
+CREATE OR ALTER PROCEDURE dbo.spConsultarMovimientosEstado
     @inIdUsuario INT -- quién consulta, para el acceso y la bitácora
-    , @inIdCuenta INT -- de qué cuenta se piden los estados
+    , @inIdEstadoCuenta INT -- estado de cuenta que se consulta
     , @inIP VARCHAR(64) -- ip del cliente, para la bitácora
     , @outResultCode INT OUTPUT -- 0 = éxito, otro número = código de error
 AS
@@ -8,9 +8,9 @@ AS
 Ejemplo de ejecución:
     DECLARE @resultado INT;
 
-    EXEC dbo.spConsultarEstadoCuenta
+    EXEC dbo.spConsultarMovimientosEstado
         @inIdUsuario = 1
-        , @inIdCuenta = 1
+        , @inIdEstadoCuenta = 1
         , @inIP = '127.0.0.1'
         , @outResultCode = @resultado OUTPUT;
 
@@ -24,31 +24,33 @@ BEGIN
         -- constantes
         DECLARE @true BIT = 1
             , @false BIT = 0
-            , @tipoOperacionConsultarEstado INT = 7 -- TipoOperacion del catálogo
-            , @cantidadEstados INT = 8; -- cuántos estados se muestran
+            , @tipoOperacionConsultarMovimientos INT = 8; -- TipoOperacion del catálogo
 
         -- variables de uso general
         DECLARE @esAdministrador BIT
+            , @idCuenta INT
             , @jsonConsulta NVARCHAR(MAX);
 
         -- inicializaciones
         SET @outResultCode = 0; -- se asume éxito
         SET @esAdministrador = @false;
+        SET @idCuenta = NULL;
 
         -- validaciones
-        -- la cuenta debe existir
-        IF NOT EXISTS (
-            SELECT 1
-            FROM dbo.Cuenta AS C
-            WHERE (C.IdCuenta = @inIdCuenta)
-        )
+        -- el estado de cuenta debe existir; de él se obtiene la cuenta
+        SELECT @idCuenta = EC.IdCuenta
+        FROM dbo.EstadoCuenta AS EC
+        WHERE (EC.IdEstadoCuenta = @inIdEstadoCuenta);
+
+        IF (@idCuenta IS NULL)
         BEGIN
-            SET @outResultCode = 50014; -- cuenta no existe
+            SET @outResultCode = 50015; -- estado de cuenta no existe
             RETURN;
         END;
 
         -- el usuario debe ser administrador o tener la cuenta en UsuarioPuedeVer.
-        -- los intentos rechazados no quedan en la bitácora
+        -- la cuenta se deduce del estado (no se recibe) para que nadie pueda
+        -- pedir un estado de una cuenta que no puede ver
         SELECT @esAdministrador = U.EsAdministrador
         FROM dbo.Usuario AS U
         WHERE (U.IdUsuario = @inIdUsuario);
@@ -58,25 +60,31 @@ BEGIN
                 SELECT 1
                 FROM dbo.UsuarioPuedeVer AS UPV
                 WHERE (UPV.IdUsuario = @inIdUsuario)
-                    AND (UPV.IdCuenta = @inIdCuenta)
+                    AND (UPV.IdCuenta = @idCuenta)
             )
         BEGIN
             SET @outResultCode = 50002; -- sin acceso a la cuenta
             RETURN;
         END;
 
-        -- preprocesamiento: JSON con el número de cuenta consultada, para la bitácora
+        -- preprocesamiento: JSON con el estado consultado, para la bitácora
         SET @jsonConsulta = (
             SELECT C.NumeroCuenta
-            FROM dbo.Cuenta AS C
-            WHERE (C.IdCuenta = @inIdCuenta)
+                , EC.NumeroPeriodo
+                , EC.FechaInicio
+                , EC.FechaFin
+            FROM dbo.EstadoCuenta AS EC
+            INNER JOIN dbo.Cuenta AS C
+                ON (C.IdCuenta = EC.IdCuenta)
+            WHERE (EC.IdEstadoCuenta = @inIdEstadoCuenta)
             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
         );
 
-        -- devuelve los últimos estados: TOP limita las filas y el ORDER BY
-        -- (fecha más reciente primero) decide cuáles son los últimos
-        SELECT TOP (@cantidadEstados)
-            EC.IdEstadoCuenta
+        -- primer resultado: datos del estado de cuenta, con el símbolo de la moneda
+        SELECT EC.IdEstadoCuenta
+            , C.NumeroCuenta
+            , TMO.Simbolo
+            , EC.NumeroPeriodo
             , EC.FechaInicio
             , EC.FechaFin
             , EC.FechaEmision
@@ -84,17 +92,36 @@ BEGIN
             , EC.SaldoFinal
             , EC.SaldoMinimo
             , EC.InteresesAcumulados
-            , EC.CantRetiros
-            , EC.CantDepositos
-            , EC.CantSinpeEntrantes
-            , EC.CantSinpeSalientes
+            , EC.CantOperATM
+            , EC.CantOperVentana
+            , EC.CantOperSinpe
+            , EC.FlagAbierto
         FROM dbo.EstadoCuenta AS EC
-        WHERE (EC.IdCuenta = @inIdCuenta)
-        ORDER BY EC.FechaEmision DESC
-            , EC.IdEstadoCuenta DESC;
+        INNER JOIN dbo.Cuenta AS C
+            ON (C.IdCuenta = EC.IdCuenta)
+        INNER JOIN dbo.TipoCuentaAhorro AS TCA
+            ON (TCA.IdTipoCuentaAhorro = C.IdTipoCuentaAhorro)
+        INNER JOIN dbo.TipoMoneda AS TMO
+            ON (TMO.IdTipoMoneda = TCA.IdTipoMoneda)
+        WHERE (EC.IdEstadoCuenta = @inIdEstadoCuenta);
 
-        -- actualización: registra la consulta en la bitácora.
-        -- DatosAntes queda en NULL; en DatosDespues va la cuenta consultada
+        -- segundo resultado: movimientos en orden cronológico.
+        -- Accion dice si el monto suma (Credito) o resta (Debito)
+        SELECT M.IdMovimiento
+            , M.Fecha
+            , TM.Nombre AS TipoMovimiento
+            , TM.Accion
+            , M.Monto
+            , M.NuevoSaldo
+            , M.Descripcion
+        FROM dbo.Movimiento AS M
+        INNER JOIN dbo.TipoMovimiento AS TM
+            ON (TM.IdTipoMovimiento = M.IdTipoMovimiento)
+        WHERE (M.IdEstadoCuenta = @inIdEstadoCuenta)
+        ORDER BY M.Fecha
+            , M.IdMovimiento;
+
+        -- actualización: registra la consulta en la bitácora
         INSERT INTO dbo.Bitacora (
             IdUsuario
             , IdTipoOperacion
@@ -104,7 +131,7 @@ BEGIN
         )
         VALUES (
             @inIdUsuario
-            , @tipoOperacionConsultarEstado
+            , @tipoOperacionConsultarMovimientos
             , @inIP
             , NULL
             , @jsonConsulta

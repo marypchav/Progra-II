@@ -156,11 +156,20 @@ app.delete('/api/beneficiarios/:id', exigirSesion, ruta(async (req, res) => {
 
 // estados de cuenta
 
+// lista de estados de una cuenta, del más reciente al más antiguo
 app.get('/api/cuentas/:idCuenta/estados', exigirSesion, ruta(async (req, res) => {
     const idCuenta = idDe(req.params.idCuenta);
     if (!idCuenta) return res.json(fallo('Cuenta inválida'));
     const r = await db.consultarEstadosCuenta(req.session.usuario.IdUsuario, idCuenta, ipDe(req));
     res.json({ exito: r.exito, mensaje: r.mensaje, estados: r.datos });
+}));
+
+// un estado de cuenta y sus movimientos en orden cronológico
+app.get('/api/estados/:idEstado/movimientos', exigirSesion, ruta(async (req, res) => {
+    const idEstado = idDe(req.params.idEstado);
+    if (!idEstado) return res.json(fallo('Estado de cuenta inválido'));
+    const r = await db.consultarMovimientosEstado(req.session.usuario.IdUsuario, idEstado, ipDe(req));
+    res.json({ exito: r.exito, mensaje: r.mensaje, estado: r.estado, movimientos: r.movimientos });
 }));
 
 // cualquier otra ruta /api responde JSON (y no una página html de error)
