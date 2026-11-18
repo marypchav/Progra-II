@@ -18,13 +18,13 @@
   const num = (v, simboloMoneda) =>
     v === null || v === undefined ? '—' : escapar(dinero(v, simboloMoneda || sim));
 
-  const cantATM = (e) => e.CantOperATM ?? e.CantRetiros ?? 0;
-  const cantVentana = (e) => e.CantOperVentana ?? e.CantDepositos ?? 0;
-  const cantSinpe = (e) =>
-    e.CantOperSinpe ?? ((e.CantSinpeEntrantes || 0) + (e.CantSinpeSalientes || 0));
+  // contadores que devuelve spConsultarEstadoCuenta / spConsultarMovimientosEstado
+  const cantATM = (e) => e.CantOperATM ?? 0;
+  const cantVentana = (e) => e.CantOperVentana ?? 0;
+  const cantSinpe = (e) => e.CantOperSinpe ?? 0;
 
-  const estaAbierto = (e) =>
-    e.FlagAbierto === true || e.FlagAbierto === 1 || !e.FechaEmision;
+  // FlagAbierto = 1 es el período en curso (todavía sin fecha de emisión)
+  const estaAbierto = (e) => e.FlagAbierto === true || e.FlagAbierto === 1;
 
   const textoFechaEstado = (e) => {
     if (e.FechaEmision) return fechaLarga(e.FechaEmision);
@@ -34,7 +34,7 @@
 
   const insigniaEstado = (e) =>
     estaAbierto(e)
-      ? `<span class="estado-badge abierto">${icono('calendar')} Abierto</span>`
+      ? `<span class="estado-badge abierto">${icono('calendar')} En curso</span>`
       : `<span class="estado-badge cerrado">${icono('check')} Cerrado</span>`;
 
   // ---------- Cargar lista de estados de cuenta ----------
@@ -112,7 +112,7 @@
     seccionDetalle.hidden = false;
     $('detalleTitulo').textContent = `Estado de cuenta · ${fechaLarga(estadoBase.FechaInicio)} al ${fechaLarga(estadoBase.FechaFin)}`;
     $('detalleSub').textContent = estaAbierto(estadoBase)
-      ? 'Período actualmente abierto · Movimientos registrados hasta la fecha.'
+      ? 'Período en curso · Movimientos registrados hasta la fecha.'
       : `Estado cerrado el ${textoFechaEstado(estadoBase)} · Detalle de movimientos en orden cronológico.`;
 
     contenidoDetalle.innerHTML = `<div class="cargando">Cargando detalle y movimientos del estado de cuenta...</div>`;
@@ -124,6 +124,10 @@
     } catch (err) {
       resMov = null;
     }
+
+    // si mientras esperaba la respuesta se eligió otro estado (o se cerró el
+    // detalle), esta respuesta ya no sirve: no debe tapar la del otro estado
+    if (idSeleccionado !== idEstado) return;
 
     if (!resMov || !resMov.exito) {
       contenidoDetalle.innerHTML = `<div class="estado-vacio error"><span class="estado-ico">${icono('xcircle')}</span>
@@ -187,7 +191,7 @@
         <h3>${icono('activity')} Detalle de movimientos (orden cronológico)</h3>
         <div class="mov-controles">
           <div class="filtro-grupo" role="group" aria-label="Filtrar por tipo de movimiento">
-            <button type="button" class="filtro-btn active-f" data-filtro="todos">Todos (${movimientosActuales.length})</button>
+            <button type="button" class="filtro-btn" data-filtro="todos">Todos (${movimientosActuales.length})</button>
             <button type="button" class="filtro-btn" data-filtro="Credito">Créditos (+)</button>
             <button type="button" class="filtro-btn" data-filtro="Debito">Débitos (−)</button>
             <button type="button" class="filtro-btn" data-filtro="sinpe">SINPE</button>
