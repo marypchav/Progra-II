@@ -75,6 +75,7 @@
             <dl>
               <div class="completo"><dt>Dueño</dt><dd>${escapar(c.NombreDueno)}</dd></div>
               <div><dt>Fecha de apertura</dt><dd>${fechaLarga(c.FechaCreacion)}</dd></div>
+              <div><dt>Moneda</dt><dd>${escapar(c.Simbolo || '₡')}</dd></div>
             </dl>
           </div>
           <div class="cuenta-card-pie">
