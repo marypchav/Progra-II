@@ -22,8 +22,7 @@ BEGIN
     BEGIN TRY
 
         -- constantes
-        DECLARE @true BIT = 1
-            , @false BIT = 0
+        DECLARE @false BIT = 0
             , @tipoOperacionConsultarMovimientos INT = 8; -- TipoOperacion del catálogo
 
         -- variables de uso general

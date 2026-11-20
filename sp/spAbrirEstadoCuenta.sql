@@ -137,7 +137,7 @@ BEGIN
 
         -- si la transacción es de quien llamó, el error se le pasa a él:
         -- él hace el ROLLBACK de todo y lo registra en dbError
-        IF (@transaccionPropia = 0)
+        IF (@transaccionPropia = @false)
             AND (@@TRANCOUNT > 0)
         BEGIN
             THROW;

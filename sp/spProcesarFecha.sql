@@ -18,8 +18,7 @@ BEGIN
     BEGIN TRY
 
         -- constantes
-        DECLARE @true BIT = 1
-            , @false BIT = 0;
+        DECLARE @true BIT = 1;
 
         -- variables de uso general
         DECLARE @primeraFecha DATE
